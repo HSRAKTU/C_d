@@ -112,7 +112,10 @@ cython_debug/
 .idea/
 
 # Data files
-./data/
+/data/processed/*
+/data/raw/*
+
+# This only ignores the data directory at the root level.
 *.csv
 *.tsv
 *.npz
@@ -126,12 +129,11 @@ cython_debug/
 *.pth
 *.onnx
 
-# TensorBoard logs
+# experiments data
+experiments/tb-logs/*
+experiments/checkpoints/*
 runs/
 logs/
-
-# Checkpoints
-checkpoints/
 
 # Temporary files
 *.tmp
