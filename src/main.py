@@ -9,6 +9,13 @@ import os
 
 import numpy as np
 
+from src.config.constants import (
+    DEFAULT_NUM_SLICES,
+    DEFAULT_SLICE_AXIS,
+    POINT_CLOUDS_DIR,
+    SLICE_DIR,
+    SUBSET_DIR,
+)
 from src.data.slices import PointCloudSlicer, display_slices
 from src.evaluation.evaluate import run_evaluation
 from src.inference.predict import run_inference
@@ -23,13 +30,13 @@ def main():
 
     # slice subcommand
     slice_p = subparsers.add_parser("slice", help="Slice 3D point clouds")
-    slice_p.add_argument("--input-dir", default="data/raw/point_clouds")
-    slice_p.add_argument("--output-dir", default="data/processed/slices")
-    slice_p.add_argument("--num-slices", type=int, default=80)
-    slice_p.add_argument("--axis", choices=["x", "y", "z"], default="x")
+    slice_p.add_argument("--input-dir", default=POINT_CLOUDS_DIR)
+    slice_p.add_argument("--output-dir", default=SLICE_DIR)
+    slice_p.add_argument("--num-slices", type=int, default=DEFAULT_NUM_SLICES)
+    slice_p.add_argument("--axis", choices=["x", "y", "z"], default=DEFAULT_SLICE_AXIS)
     slice_p.add_argument("--max-files", type=int)
     slice_p.add_argument("--split", choices=["train", "val", "test"], default="train")
-    slice_p.add_argument("--subset-dir", default="data/raw/subset_dir")
+    slice_p.add_argument("--subset-dir", default=SUBSET_DIR)
 
     # visualize subcommand
     viz_p = subparsers.add_parser(
@@ -50,14 +57,14 @@ def main():
     viz_p.add_argument(
         "--axis",
         choices=["x", "y", "z"],
-        default="x",
+        default=DEFAULT_SLICE_AXIS,
         help="Axis the slices were taken along (for titles)",
     )
     viz_p.add_argument(
         "--save-path",
         type=str,
         default=None,
-        help="If given, save figure here instead of showing",
+        help="If provided, save figure here instead of showing",
     )
     # train subcommand - Not Implemented
     train_p = subparsers.add_parser("train", help="Train the model")
@@ -109,13 +116,13 @@ def main():
         )
 
     elif args.command == "train":
-        run_training(args)
+        run_training()
 
     elif args.command == "evaluate":
-        run_evaluation(args)
+        run_evaluation()
 
     elif args.command == "predict":
-        run_inference(args)
+        run_inference()
 
 
 if __name__ == "__main__":

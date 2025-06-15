@@ -6,8 +6,13 @@ import numpy as np
 import paddle
 from tqdm import tqdm
 
+from src.config.constants import (
+    DEFAULT_NUM_SLICES,
+    DEFAULT_SLICE_AXIS,
+    DEFAULT_TARGET_POINTS,
+)
 from src.utils.io import load_design_ids
-from src.utils.logger import logger
+from src.utils.logger import logging as logger
 
 
 class PointCloudSlicer:
@@ -100,7 +105,9 @@ class PointCloudSlicer:
         )
 
 
-def pad_and_mask_slices(slice_list, target_slices=80, target_points=6500):
+def pad_and_mask_slices(
+    slice_list, target_slices=DEFAULT_NUM_SLICES, target_points=DEFAULT_TARGET_POINTS
+):
     padded = np.zeros((target_slices, target_points, 2), dtype=np.float32)
     point_mask = np.zeros((target_slices, target_points), dtype=np.float32)
     slice_mask = np.zeros((target_slices,), dtype=np.float32)
@@ -117,7 +124,11 @@ def pad_and_mask_slices(slice_list, target_slices=80, target_points=6500):
 
 
 def process_all_slices(
-    slice_dir, output_dir, split, target_slices=80, target_points=6500
+    slice_dir,
+    output_dir,
+    split,
+    target_slices=DEFAULT_NUM_SLICES,
+    target_points=DEFAULT_TARGET_POINTS,
 ):
     os.makedirs(output_dir, exist_ok=True)
     design_ids = load_design_ids(split)
@@ -146,7 +157,13 @@ def process_all_slices(
 
 
 def display_slices(
-    slices, car_id=None, n_cols=5, limit=None, figsize=(15, 3), axis="x", save_path=None
+    slices,
+    car_id=None,
+    n_cols=5,
+    limit=None,
+    figsize=(15, 3),
+    axis=DEFAULT_SLICE_AXIS,
+    save_path=None,
 ):
     """
     Display or save 2D slices from a point cloud.
@@ -181,7 +198,7 @@ def display_slices(
         ax.axis("off")
         ax.set_title(f"{axis} ∈ slice {idx}", fontsize=8)
 
-    for j in range(idx + 1, n_rows * n_cols):
+    for j in range(n, n_rows * n_cols):
         axes.flat[j].axis("off")
 
     fig.suptitle(
