@@ -1,5 +1,7 @@
 """
 The main cli tool.
+This is supposed to be run from the project's root.
+All the paths are relative to the projects root.
 """
 
 import argparse
@@ -21,13 +23,13 @@ def main():
 
     # slice subcommand
     slice_p = subparsers.add_parser("slice", help="Slice 3D point clouds")
-    slice_p.add_argument("--input-dir", default="data/PointClouds")
-    slice_p.add_argument("--output-dir", default="outputs/slices")
+    slice_p.add_argument("--input-dir", default="data/raw/point_clouds")
+    slice_p.add_argument("--output-dir", default="data/processed/slices")
     slice_p.add_argument("--num-slices", type=int, default=80)
     slice_p.add_argument("--axis", choices=["x", "y", "z"], default="x")
     slice_p.add_argument("--max-files", type=int)
     slice_p.add_argument("--split", choices=["train", "val", "test"], default="train")
-    slice_p.add_argument("--subset-dir", default="data/subset_dir")
+    slice_p.add_argument("--subset-dir", default="data/raw/subset_dir")
 
     # visualize subcommand
     viz_p = subparsers.add_parser(
