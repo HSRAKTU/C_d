@@ -9,6 +9,8 @@ dependencies = [
     "matplotlib>=3.10.3",
     "numpy>=2.3.0",
     "paddlepaddle>=3.0.0",
+    "pytorch-ignite>=0.5.2",
+    "torch>=2.7.1",
     "tqdm>=4.67.1",
 ]
 
