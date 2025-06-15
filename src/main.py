@@ -12,11 +12,13 @@ import numpy as np
 from src.config.constants import (
     DEFAULT_NUM_SLICES,
     DEFAULT_SLICE_AXIS,
+    DEFAULT_TARGET_POINTS,
+    PADDED_MASKED_SLICES_DIR,
     POINT_CLOUDS_DIR,
     SLICE_DIR,
     SUBSET_DIR,
 )
-from src.data.slices import PointCloudSlicer, display_slices
+from src.data.slices import PointCloudSlicer, display_slices, process_all_slices
 from src.evaluation.evaluate import run_evaluation
 from src.inference.predict import run_inference
 from src.training.ignite_loops import run_training
@@ -66,6 +68,39 @@ def main():
         default=None,
         help="If provided, save figure here instead of showing",
     )
+
+    # pad subcommand
+    pad_p = subparsers.add_parser(
+        "pad", help="Pad & mask 2D slices into fixed‐size arrays"
+    )
+    pad_p.add_argument(
+        "--split",
+        "-s",
+        choices=["train", "val", "test"],
+        required=True,
+        help="Which split to process",
+    )
+    pad_p.add_argument(
+        "--slice-dir", default=SLICE_DIR, help="Directory with .npy slice files"
+    )
+    pad_p.add_argument(
+        "--output-dir",
+        default=PADDED_MASKED_SLICES_DIR,
+        help="Where to save .npz files",
+    )
+    pad_p.add_argument(
+        "--target-slices",
+        type=int,
+        default=DEFAULT_NUM_SLICES,
+        help="Number of slices per sample",
+    )
+    pad_p.add_argument(
+        "--target-points",
+        type=int,
+        default=DEFAULT_TARGET_POINTS,
+        help="Max points per slice",
+    )
+
     # train subcommand - Not Implemented
     train_p = subparsers.add_parser("train", help="Train the model")
     # TODO: Add actual arguments instead of this placeholder.
@@ -113,6 +148,15 @@ def main():
             limit=args.limit,
             axis=args.axis,
             save_path=args.save_path,
+        )
+
+    elif args.command == "pad":
+        process_all_slices(
+            slice_dir=args.slice_dir,
+            output_dir=args.output_dir,
+            split=args.split,
+            target_slices=args.target_slices,
+            target_points=args.target_points,
         )
 
     elif args.command == "train":
