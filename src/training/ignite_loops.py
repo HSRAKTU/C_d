@@ -153,16 +153,21 @@ def run_training(
     # share the very same scaler object to avoid second disk read
     val_set.scaler = train_set.scaler
 
-    dl_kwargs = dict(
-        batch_size=cfg["data"].get("batch_size", 8),
+    train_loader = DataLoader(
+        train_set,
+        batch_size=cfg["data"].get("batch_size", 4),
         num_workers=cfg["data"].get("num_workers", 4),
         pin_memory=(device.type == "cuda"),
         shuffle=True,
         drop_last=True,
     )
-    train_loader = DataLoader(train_set, **dl_kwargs)
     val_loader = DataLoader(
-        val_set, {**dl_kwargs, "shuffle": False, "drop_last": False}
+        val_set,
+        batch_size=cfg["data"].get("batch_size", 4),
+        num_workers=cfg["data"].get("num_workers", 4),
+        pin_memory=(device.type == "cuda"),
+        shuffle=False,
+        drop_last=False,
     )
 
     # --------------------------------------------------------------------- #
@@ -187,7 +192,6 @@ def run_training(
             # RMSE = sqrt(MSE) – compute on-the-fly in logger
         },
         device=device,
-        output_transform=lambda out: out,  # our eval step returns (y_pred, y)
     )
 
     # Log running loss every N iterations
@@ -235,7 +239,9 @@ def run_training(
     # --------------------------------------------------------------------- #
     # Checkpointing & (optional) resume                                     #
     # --------------------------------------------------------------------- #
-    score_fn = lambda eng: -eng.state.metrics["mae"]  # minimise MAE
+    def score_fn(eng):
+        return -eng.state.metrics["mae"]  # minimise MAE
+
     saver = ModelCheckpoint(
         dirname=CHECKPOINT_DIR,
         filename_prefix="best",

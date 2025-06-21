@@ -54,10 +54,18 @@ class CdDataset(Dataset):
         # ----------------------------------------------------------------- #
         # 1) Build / load scaler                                            #
         # ----------------------------------------------------------------- #
-        if fit_scaler:
-            self.scaler = self._fit_and_save_scaler()
-        else:
-            self.scaler = load_scaler(SCALER_FILE)  # may raise FileNotFoundError
+        try:
+            if fit_scaler:
+                self.scaler = self._fit_and_save_scaler()
+            else:
+                self.scaler = load_scaler(SCALER_FILE)
+            if not self.scaler.mean_ or not self.scaler.scale_:
+                raise ValueError(
+                    "Transformation Scaler not loader correctly. Can't get the mean and scale."
+                )
+        except Exception as e:
+            logger.error(f"Error in getting transformation scaler. Error msg: {e}")
+            raise e
 
         logger.info(
             f"{split:<5} dataset with {len(self)} samples | "

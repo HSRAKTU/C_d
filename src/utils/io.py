@@ -2,12 +2,18 @@
 Utility method for input/output from the disk.
 """
 
+from __future__ import annotations
+
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import joblib
 
 from src.config.constants import SCALER_FILE, SUBSET_DIR
 from src.utils.logger import logging as logger
+
+if TYPE_CHECKING:
+    from sklearn.preprocessing import StandardScaler
 
 
 def load_design_ids(split, subset_dir: Path = SUBSET_DIR):
@@ -37,7 +43,7 @@ def save_scaler(scaler, path: Path = SCALER_FILE) -> Path:
     return path
 
 
-def load_scaler(path: Path = SCALER_FILE):
+def load_scaler(path: Path = SCALER_FILE) -> StandardScaler:
     """
     Load a previously saved scaler from disk.
 
