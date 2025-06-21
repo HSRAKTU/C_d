@@ -24,7 +24,7 @@ from sklearn.preprocessing import StandardScaler
 from torch.utils.data import Dataset
 
 from src.config.constants import SCALER_FILE
-from src.utils.io import load_scaler, save_scaler  # already provided in utils.io
+from src.utils.io import load_scaler, save_scaler
 from src.utils.logger import logging as logger
 
 
