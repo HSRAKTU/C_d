@@ -30,6 +30,7 @@ from ignite.handlers import (
     TensorboardLogger,
     global_step_from_engine,
 )
+from ignite.handlers.tqdm_logger import ProgressBar
 from ignite.metrics import MeanAbsoluteError, MeanSquaredError
 from ignite.metrics.regression.r2_score import R2Score
 from torch.utils.data import DataLoader
@@ -267,6 +268,15 @@ def run_training(
         Checkpoint.load_objects(
             to_load=to_load, checkpoint=torch.load(ckpt_fp, map_location=device)
         )
+
+    # --------------------------------------------------------------------- #
+    # Attach Progress Bar                                                   #
+    # --------------------------------------------------------------------- #
+    train_pbar = ProgressBar(desc="Training", persist=True)
+    train_pbar.attach(trainer, output_transform=lambda loss: {"batch_loss": loss})
+
+    val_pbar = ProgressBar(desc="Validation", persist=True)
+    val_pbar.attach(evaluator)
 
     # --------------------------------------------------------------------- #
     # Start training                                                        #
