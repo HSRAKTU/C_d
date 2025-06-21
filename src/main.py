@@ -11,7 +11,6 @@ Run from the project root, e.g.
 from __future__ import annotations
 
 import argparse
-import os
 import sys
 from pathlib import Path
 
@@ -47,19 +46,21 @@ def build_parser() -> argparse.ArgumentParser:
     # slice                                                                 #
     # --------------------------------------------------------------------- #
     slice_p = subparsers.add_parser("slice", help="Slice 3-D point clouds")
-    slice_p.add_argument("--input-dir", default=POINT_CLOUDS_DIR)
-    slice_p.add_argument("--output-dir", default=SLICE_DIR)
+    slice_p.add_argument("--input-dir", type=Path, default=POINT_CLOUDS_DIR)
+    slice_p.add_argument("--output-dir", type=Path, default=SLICE_DIR)
     slice_p.add_argument("--num-slices", type=int, default=DEFAULT_NUM_SLICES)
     slice_p.add_argument("--axis", choices=["x", "y", "z"], default=DEFAULT_SLICE_AXIS)
     slice_p.add_argument("--max-files", type=int)
     slice_p.add_argument("--split", choices=["train", "val", "test"], default="train")
-    slice_p.add_argument("--subset-dir", default=SUBSET_DIR)
+    slice_p.add_argument("--subset-dir", type=Path, default=SUBSET_DIR)
 
     # --------------------------------------------------------------------- #
     # visualize                                                             #
     # --------------------------------------------------------------------- #
     viz_p = subparsers.add_parser("visualize", help="Show saved 2-D slices")
-    viz_p.add_argument("-i", "--input", required=True, help="Path to .npy slice file")
+    viz_p.add_argument(
+        "-i", "--input", type=Path, required=True, help="Path to .npy slice file"
+    )
     viz_p.add_argument("--cols", type=int, default=5)
     viz_p.add_argument("--limit", type=int)
     viz_p.add_argument("--axis", choices=["x", "y", "z"], default=DEFAULT_SLICE_AXIS)
@@ -70,8 +71,8 @@ def build_parser() -> argparse.ArgumentParser:
     # --------------------------------------------------------------------- #
     pad_p = subparsers.add_parser("pad", help="Pad & mask slice arrays")
     pad_p.add_argument("-s", "--split", choices=["train", "val", "test"], required=True)
-    pad_p.add_argument("--slice-dir", default=SLICE_DIR)
-    pad_p.add_argument("--output-dir", default=PADDED_MASKED_SLICES_DIR)
+    pad_p.add_argument("--slice-dir", type=Path, default=SLICE_DIR)
+    pad_p.add_argument("--output-dir", type=Path, default=PADDED_MASKED_SLICES_DIR)
     pad_p.add_argument("--target-slices", type=int, default=DEFAULT_NUM_SLICES)
     pad_p.add_argument("--target-points", type=int, default=DEFAULT_TARGET_POINTS)
 
@@ -80,10 +81,14 @@ def build_parser() -> argparse.ArgumentParser:
     # --------------------------------------------------------------------- #
     train_p = subparsers.add_parser("train", help="Train a model")
     train_p.add_argument(
-        "--config", required=True, help="Path to YAML / JSON experiment config"
+        "--config",
+        type=Path,
+        required=True,
+        help="Path to YAML / JSON experiment config",
     )
     train_p.add_argument(
         "--resume",
+        type=Path,
         help="Full path to checkpoint to resume from.  "
         "If omitted, you will be prompted interactively.",
     )
@@ -94,8 +99,12 @@ def build_parser() -> argparse.ArgumentParser:
     # evaluate                                                              #
     # --------------------------------------------------------------------- #
     eval_p = subparsers.add_parser("evaluate", help="Evaluate a checkpoint")
-    eval_p.add_argument("--config", required=True, help="Experiment config YAML / JSON")
-    eval_p.add_argument("--checkpoint", required=True, help="Path to model *.pt file")
+    eval_p.add_argument(
+        "--config", type=Path, required=True, help="Experiment config YAML / JSON"
+    )
+    eval_p.add_argument(
+        "--checkpoint", type=Path, required=True, help="Path to model *.pt file"
+    )
     eval_p.add_argument("--split", choices=["val", "test"], default="test")
     eval_p.add_argument("--batch-size", type=int)
     eval_p.add_argument("--num-workers", type=int)
@@ -104,12 +113,18 @@ def build_parser() -> argparse.ArgumentParser:
     # predict                                                               #
     # --------------------------------------------------------------------- #
     pred_p = subparsers.add_parser("predict", help="Run inference")
-    pred_p.add_argument("--config", required=True, help="Experiment config YAML / JSON")
-    pred_p.add_argument("--checkpoint", required=True, help="Model *.pt checkpoint")
     pred_p.add_argument(
-        "--input-data", required=True, help="File or directory of *.npz"
+        "--config", type=Path, required=True, help="Experiment config YAML / JSON"
     )
-    pred_p.add_argument("--output", required=True, help="CSV path for predictions")
+    pred_p.add_argument(
+        "--checkpoint", type=Path, required=True, help="Model *.pt checkpoint"
+    )
+    pred_p.add_argument(
+        "--input-data", type=Path, required=True, help="File or directory of *.npz"
+    )
+    pred_p.add_argument(
+        "--output", type=Path, required=True, help="CSV path for predictions"
+    )
     pred_p.add_argument("--batch-size", type=int)
     pred_p.add_argument("--num-workers", type=int)
 
@@ -138,10 +153,10 @@ def main() -> None:
 
     # ---------------------------- visualize ------------------------------- #
     elif args.command == "visualize":
-        if not os.path.exists(args.input):
+        if not args.input.is_file():
             parser.error(f"File not found: {args.input}")
         slices = np.load(args.input, allow_pickle=True)
-        car_id = Path(args.input).stem
+        car_id = args.input.stem
         display_slices(
             slices,
             car_id=car_id,

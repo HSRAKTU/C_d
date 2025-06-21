@@ -23,7 +23,7 @@ import yaml
 from ignite.engine import Engine, Events
 from torch.utils.data import DataLoader, Dataset
 
-from src.config.constants import SCALER_DIR
+from src.config.constants import SCALER_FILE
 from src.models.model import CdRegressor
 from src.utils.io import load_scaler
 from src.utils.logger import logging as logger
@@ -65,7 +65,7 @@ class InferenceDataset(Dataset):
 
     def __init__(self, files: Sequence[Path]):
         self.files = list(files)
-        self.scaler = load_scaler(SCALER_DIR)
+        self.scaler = load_scaler(SCALER_FILE)
 
     def __len__(self) -> int:
         return len(self.files)

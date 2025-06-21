@@ -8,7 +8,7 @@ PyTorch-Ignite loops.
 Normalisation rules
 -------------------
 * Fit the scaler **once** on the *train* split (all points where point_mask==1).
-* Persist it to `constants.SCALER_DIR`.
+* Persist it to `constants.SCALER_FILE`.
 * All other splits **load** the persisted scaler – never refit.
 * Cd (target) is never scaled.
 """
@@ -23,7 +23,7 @@ import torch
 from sklearn.preprocessing import StandardScaler
 from torch.utils.data import Dataset
 
-from src.config.constants import SCALER_DIR
+from src.config.constants import SCALER_FILE
 from src.utils.io import load_scaler, save_scaler  # already provided in utils.io
 from src.utils.logger import logging as logger
 
@@ -57,7 +57,7 @@ class CdDataset(Dataset):
         if fit_scaler:
             self.scaler = self._fit_and_save_scaler()
         else:
-            self.scaler = load_scaler(SCALER_DIR)  # may raise FileNotFoundError
+            self.scaler = load_scaler(SCALER_FILE)  # may raise FileNotFoundError
 
         logger.info(
             f"{split:<5} dataset with {len(self)} samples | "
@@ -74,14 +74,12 @@ class CdDataset(Dataset):
             [pts.reshape(-1, 2) for pts in points_iter], axis=0
         )  # (N_total, 2)
         scaler = StandardScaler().fit(coords)
-        SCALER_DIR.parent.mkdir(parents=True, exist_ok=True)
-        save_scaler(scaler, SCALER_DIR)
-        logger.info(f"Scaler saved → {SCALER_DIR}")
+        save_scaler(scaler, SCALER_FILE)
+        logger.info(f"Scaler saved → {SCALER_FILE}")
         return scaler
 
     # ---------------------------- I/O utils ----------------------------- #
-    @staticmethod
-    def _load_npz(fp: Path, raw: bool = False):
+    def _load_npz(self, fp: Path, raw: bool = False):
         """Return slices, point_mask, slice_mask, Cd."""
         data = np.load(fp, allow_pickle=True)
         slices = data["slices"]  # (S, P, 2)

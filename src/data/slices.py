@@ -1,5 +1,4 @@
-import glob
-import os
+from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -26,24 +25,24 @@ class PointCloudSlicer:
         split,
         subset_dir,
     ):
-        self.input_dir = input_dir
-        self.output_dir = output_dir
+        self.input_dir = Path(input_dir)
+        self.output_dir = Path(output_dir)
         self.num_slices = num_slices
         self.axis = axis
         self.max_files = max_files
         self.split = split
-        self.subset_dir = subset_dir
+        self.subset_dir = Path(subset_dir)
 
-        os.makedirs(self.output_dir, exist_ok=True)
+        self.output_dir.mkdir(parents=True, exist_ok=True)
 
         self.axis_map = {"x": 0, "y": 1, "z": 2}
         if self.axis not in self.axis_map:
             raise ValueError("Axis must be one of 'x', 'y', or 'z'.")
 
-        self.valid_ids = load_design_ids(split, subset_dir)
+        self.valid_ids = load_design_ids(split, self.subset_dir)
 
-    def load_point_cloud(self, file_path):
-        tensor = paddle.load(file_path)
+    def load_point_cloud(self, file_path: Path):
+        tensor = paddle.load(str(file_path))
         return tensor.numpy()
 
     def generate_slices(self, points):
@@ -61,22 +60,18 @@ class PointCloudSlicer:
             slices.append(sl)
         return slices
 
-    def process_file(self, file_path):
+    def process_file(self, file_path: Path):
         points = self.load_point_cloud(file_path)
         slices = self.generate_slices(points)
         total_points = sum(len(sl) for sl in slices)
         logger.info(
-            f"{os.path.basename(file_path)} → {total_points} total points across {len(slices)} slices."
+            f"{file_path.name} → {total_points} total points across {len(slices)} slices."
         )
         return slices
 
     def run(self):
-        all_files = sorted(glob.glob(os.path.join(self.input_dir, "*.paddle_tensor")))
-        filtered_files = [
-            f
-            for f in all_files
-            if os.path.splitext(os.path.basename(f))[0] in self.valid_ids
-        ]
+        all_files = sorted(self.input_dir.glob("*.paddle_tensor"))
+        filtered_files = [f for f in all_files if f.stem in self.valid_ids]
 
         if self.max_files is not None:
             filtered_files = filtered_files[: self.max_files]
@@ -89,10 +84,8 @@ class PointCloudSlicer:
 
         for file_path in tqdm(filtered_files, desc=f"Slicing {self.split} set"):
             try:
-                car_id = os.path.splitext(os.path.basename(file_path))[0]
-                output_path = os.path.join(
-                    self.output_dir, f"{car_id}_axis-{self.axis}.npy"
-                )
+                car_id = file_path.stem
+                output_path = self.output_dir / f"{car_id}_axis-{self.axis}.npy"
                 slices = self.process_file(file_path)
                 np.save(output_path, np.array(slices, dtype=object), allow_pickle=True)
                 count_success += 1
@@ -130,30 +123,32 @@ def process_all_slices(
     target_slices=DEFAULT_NUM_SLICES,
     target_points=DEFAULT_TARGET_POINTS,
 ):
-    os.makedirs(output_dir, exist_ok=True)
+    slice_dir = Path(slice_dir)
+    output_dir = Path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
     design_ids = load_design_ids(split)
     logger.info(f"Preparing split: {split} → {len(design_ids)} design IDs")
 
-    all_files = [f for f in os.listdir(slice_dir) if f.endswith(".npy")]
-    matched = [f for f in all_files if any(f.startswith(d + "_") for d in design_ids)]
+    all_files = [f for f in slice_dir.glob("*.npy")]
+    matched = [f for f in all_files if f.stem.split("_")[0] in design_ids]
     logger.info(f"Matched {len(matched)} files in {slice_dir} for split '{split}'")
 
     for fname in tqdm(matched, desc=f"Pad/mask {split}", ncols=80):
-        in_path = os.path.join(slice_dir, fname)
+        in_path = fname
         try:
             slices = np.load(in_path, allow_pickle=True)
             padded, pmask, smask = pad_and_mask_slices(
                 slices, target_slices, target_points
             )
-            car_id = os.path.splitext(fname)[0]
-            out_path = os.path.join(output_dir, f"{car_id}.npz")
+            car_id = fname.stem
+            out_path = output_dir / f"{car_id}.npz"
             np.savez_compressed(
                 out_path, slices=padded, point_mask=pmask, slice_mask=smask
             )
         except Exception as e:
-            logger.warning(f"❌ {fname} failed: {e}")
+            logger.warning(f"{fname.name} failed: {e}")
 
-    logger.info(f"✅ Done: {len(matched)} → {output_dir}")
+    logger.info(f"Done: {len(matched)} → {output_dir}")
 
 
 def display_slices(

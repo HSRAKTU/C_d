@@ -1,22 +1,33 @@
-import os
+from pathlib import Path
 
-# PATHS
-BASE_DATA_DIR = "data"
+# ------------------------------------------------------------------ #
+#  Project roots                                                     #
+# ------------------------------------------------------------------ #
+PROJECT_ROOT = Path(__file__).resolve().parents[2]  # …/Cd_prediction/C_d
+DATA_DIR = PROJECT_ROOT / "data"
+RAW_DIR = DATA_DIR / "raw"
+PROC_DIR = DATA_DIR / "processed"
+EXP_DIR = PROJECT_ROOT / "experiments"
 
-RAW_DATA_DIR = os.path.join(BASE_DATA_DIR, "raw")
-POINT_CLOUDS_DIR = os.path.join(RAW_DATA_DIR, "point_clouds")
-SUBSET_DIR = os.path.join(RAW_DATA_DIR, "subset_dir")
+# ------------------------------------------------------------------ #
+#  Raw / processed paths                                             #
+# ------------------------------------------------------------------ #
+POINT_CLOUDS_DIR = RAW_DIR / "point_clouds"
+SUBSET_DIR = RAW_DIR / "subset_dir"
 
-PROCESSED_DATA_DIR = os.path.join(BASE_DATA_DIR, "processed")
-SCALER_DIR = os.path.join(PROCESSED_DATA_DIR, "scalars")
-SLICE_DIR = os.path.join(PROCESSED_DATA_DIR, "slices")
-PADDED_MASKED_SLICES_DIR = os.path.join(PROCESSED_DATA_DIR, "padded_masked_slices")
+SLICE_DIR = PROC_DIR / "slices"
+PADDED_MASKED_SLICES_DIR = PROC_DIR / "padded_masked_slices"
+SCALER_FILE = PROC_DIR / "scalars" / "scaler.pkl"  # <— single file
 
+# ------------------------------------------------------------------ #
+#  Experiments                                                       #
+# ------------------------------------------------------------------ #
+CHECKPOINT_DIR = EXP_DIR / "checkpoints"
+TB_LOG_DIR = EXP_DIR / "tb-logs"
 
-CHECKPOINT_DIR = "experiments/checkpoints"
-TB_LOG_DIR = "experiments/tb-logs"
-
-# PREPROCESSING
+# ------------------------------------------------------------------ #
+#  Pre-processing defaults                                           #
+# ------------------------------------------------------------------ #
 DEFAULT_NUM_SLICES = 80
 DEFAULT_SLICE_AXIS = "x"
-DEFAULT_TARGET_POINTS = 6500
+DEFAULT_TARGET_POINTS = 6_500
