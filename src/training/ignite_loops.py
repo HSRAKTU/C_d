@@ -31,6 +31,7 @@ from ignite.handlers import (
     global_step_from_engine,
 )
 from ignite.metrics import MeanAbsoluteError, MeanSquaredError
+from ignite.metrics.regression.r2_score import R2Score
 from torch.utils.data import DataLoader
 
 from src.config.constants import (  # :contentReference[oaicite:2]{index=2}
@@ -189,7 +190,7 @@ def run_training(
         metrics={
             "mae": MeanAbsoluteError(),
             "mse": MeanSquaredError(),
-            # RMSE = sqrt(MSE) – compute on-the-fly in logger
+            "r2": R2Score(),
         },
         device=device,
     )
@@ -215,7 +216,9 @@ def run_training(
         logger.info(
             f"Epoch {engine.state.epoch}: "
             f"train MAE={train_metrics['mae']:.4f} "
+            f"train R2={train_metrics['r2']:.4f} "
             f"val MAE={val_metrics['mae']:.4f}"
+            f"val R2={val_metrics['r2']:.4f}"
         )
 
     # --------------------------------------------------------------------- #
@@ -232,7 +235,7 @@ def run_training(
         evaluator,
         event_name=Events.EPOCH_COMPLETED,
         tag="validation",
-        metric_names=["mae", "mse"],
+        metric_names=["mae", "mse", "r2"],
         global_step_transform=global_step_from_engine(trainer),
     )
 

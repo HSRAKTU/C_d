@@ -19,6 +19,7 @@ import torch
 import yaml
 from ignite.engine import create_supervised_evaluator
 from ignite.metrics import MeanAbsoluteError, MeanSquaredError
+from ignite.metrics.regression.r2_score import R2Score
 from torch.utils.data import DataLoader
 
 from src.config.constants import PADDED_MASKED_SLICES_DIR
@@ -105,6 +106,7 @@ def run_evaluation(
         metrics={
             "mae": MeanAbsoluteError(),
             "mse": MeanSquaredError(),
+            "r2": R2Score(),
         },
         device=device,
     )
@@ -114,8 +116,9 @@ def run_evaluation(
     metrics = evaluator.state.metrics
     metrics["rmse"] = metrics["mse"] ** 0.5
     logger.info(
-        f"✅  Split={split} | MAE={metrics['mae']:.4f} "
-        f"MSE={metrics['mse']:.4f} RMSE={metrics['rmse']:.4f}"
+        f"Split={split} | "
+        f"MAE={metrics['mae']:.4f} MSE={metrics['mse']:.4f} "
+        f"RMSE={metrics['rmse']:.4f} R2={metrics['r2']:.4f}"
     )
 
     return metrics
