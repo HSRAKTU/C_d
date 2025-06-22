@@ -111,6 +111,7 @@ def run_evaluation(
         },
         device=device,
     )
+
     # ── Attach Evaluation Progress Bar ─────────────────────────────
     eval_pbar = ProgressBar(desc=f"Evaluating ({split})", persist=True)
     eval_pbar.attach(evaluator)

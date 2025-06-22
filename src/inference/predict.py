@@ -157,7 +157,7 @@ def run_inference(
         slices, p_mask, s_mask, ids = batch
         slices, p_mask, s_mask = slices.to(device), p_mask.to(device), s_mask.to(device)
         with torch.no_grad():
-            preds = model(slices, p_mask, s_mask).squeeze()
+            preds = model((slices, p_mask, s_mask)).squeeze()
         preds = preds.cpu().tolist()
         if isinstance(preds, float):  # batch_size == 1
             preds = [preds]
@@ -178,6 +178,6 @@ def run_inference(
         writer = csv.writer(f)
         writer.writerow(["design_id", "Cd"])
         writer.writerows(predictions)
-    logger.info(f"✅  Saved {len(predictions)} predictions → {output_path}")
+    logger.info(f"Saved {len(predictions)} predictions → {output_path}")
 
     return predictions

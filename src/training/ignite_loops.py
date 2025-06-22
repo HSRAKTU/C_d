@@ -23,7 +23,7 @@ from typing import Dict, Union
 import torch
 import torch.nn as nn
 import yaml
-from ignite.engine import Engine, Events, create_supervised_evaluator
+from ignite.engine import Events, create_supervised_evaluator, create_supervised_trainer
 from ignite.handlers import (
     Checkpoint,
     ModelCheckpoint,
@@ -68,37 +68,6 @@ def _prepare_device(device_str: str | None = None) -> torch.device:
     if device_str:
         return torch.device(device_str)
     return torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-
-# --------------------------------------------------------------------------- #
-# Ignite step functions                                                       #
-# --------------------------------------------------------------------------- #
-def _train_step(model, optimizer, criterion, device):
-    """Custom step to handle (slices, p_mask, s_mask, target) tuples."""
-
-    def fn(engine, batch):
-        model.train()
-        slices, p_mask, s_mask, target = (t.to(device) for t in batch)
-        optimizer.zero_grad(set_to_none=True)
-        preds = model(slices, p_mask, s_mask)
-        loss = criterion(preds.squeeze(), target)
-        loss.backward()
-        # TODO: add gradient clipping if cfg["optim"].get("grad_clip") is set
-        optimizer.step()
-        return loss.item()
-
-    return fn
-
-
-def _eval_step(model, device):
-    def fn(engine, batch):
-        model.eval()
-        with torch.no_grad():
-            slices, p_mask, s_mask, target = (t.to(device) for t in batch)
-            preds = model(slices, p_mask, s_mask)
-        return preds.squeeze(), target
-
-    return fn
 
 
 # --------------------------------------------------------------------------- #
@@ -184,7 +153,7 @@ def run_training(
     # --------------------------------------------------------------------- #
     # Ignite engines                                                        #
     # --------------------------------------------------------------------- #
-    trainer = Engine(_train_step(model, optimizer, criterion, device))
+    trainer = create_supervised_trainer(model, optimizer, criterion, device=device)
     evaluator = create_supervised_evaluator(
         model,
         metrics={

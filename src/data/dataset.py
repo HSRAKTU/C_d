@@ -16,7 +16,7 @@ Normalisation rules
 from __future__ import annotations
 
 from pathlib import Path
-from typing import List, Tuple
+from typing import List
 
 import numpy as np
 import torch
@@ -30,7 +30,7 @@ from src.utils.logger import logging as logger
 
 class CdDataset(Dataset):
     """
-    Dataset yielding (slices, point_mask, slice_mask, target) tensors.
+    Dataset yielding (x = (slices, point_mask, slice_mask), y = target) tensors.
 
     Args:
         root_dir:   directory containing the padded/masked *.npz files.
@@ -104,13 +104,12 @@ class CdDataset(Dataset):
     def __len__(self) -> int:
         return len(self.files)
 
-    def __getitem__(
-        self, idx: int
-    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+    def __getitem__(self, idx: int):
         slices, p_mask, s_mask, cd = self._load_npz(self.files[idx])
-        return (
+        x = (
             torch.from_numpy(slices).float(),
             torch.from_numpy(p_mask).float(),
             torch.from_numpy(s_mask).float(),
-            torch.tensor(cd, dtype=torch.float32),
         )
+        y = torch.tensor(cd, dtype=torch.float32)
+        return x, y

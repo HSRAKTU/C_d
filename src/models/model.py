@@ -128,24 +128,21 @@ class CdRegressor(nn.Module):
         )
 
     # -------------------------- public interface ------------------------ #
-    def forward(
-        self,
-        slices: torch.Tensor,
-        point_mask: torch.Tensor,
-        slice_mask: torch.Tensor,
-    ) -> torch.Tensor:
+    def forward(self, x) -> torch.Tensor:
         """
-        Args
-        ----
-        slices:      (B, S, P, 2)
-        point_mask:  (B, S, P)
-        slice_mask:  (B, S)
-
+        Args:
+            x: 3-tuple `(slices, point_mask, slice_mask)`
+                slices      – (B, S, P, 2)
+                point_mask  – (B, S, P)
+                slice_mask  – (B, S)
         Returns
         -------
-        Cd: (B, 1)
+            Cd prediction (B, 1)
         """
+
+        slices, point_mask, slice_mask = x
         B, S, P, _ = slices.shape
+
         # Flatten batch & slice dims for PointNet
         flat_pts = slices.view(B * S, P, 2)
         flat_mask = point_mask.view(B * S, P)
@@ -167,4 +164,4 @@ class CdRegressor(nn.Module):
         slices = torch.randn(batch_size, S, P, 2)
         p_mask = torch.ones(batch_size, S, P)
         s_mask = torch.ones(batch_size, S)
-        return slices, p_mask, s_mask
+        return (slices, p_mask, s_mask)
