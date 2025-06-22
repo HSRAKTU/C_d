@@ -5,7 +5,7 @@ Example
 -------
 python -m src.main evaluate \
     --config experiments/baseline.yaml \
-    --checkpoint experiments/checkpoints/best_model_val_mae=0.0123.pt \
+    --checkpoint experiments/exp_name/checkpoints/best_model_val_mae=0.0123.pt \
     --split test
 """
 

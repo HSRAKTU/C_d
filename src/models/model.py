@@ -3,6 +3,7 @@ Cd-Regressor network used in the original notebook.
 
 Pipeline
 --------
+Notation — B: batch size, S: number of slices, P: points per slice
 (B, S, P, 2)  →  PointNet2D  →  (B, S, F)
               ▸ max-pool over P (masked)
 (B, S, F)     →  Bi-LSTM     →  (B, 2·H)
@@ -47,11 +48,11 @@ class PointNet2D(nn.Module):
         Args
         ----
         pts:      (B·S, P, 2)
-        pt_mask:  (B·S, P)
+        pt_mask:  (B·S, P), 1 for real points, 0 for padded points.
 
         Returns
         -------
-        slice_emb: (B·S, out_dim)
+        Slice embeddings: (B.S, F) where F= out_dim
         """
         feat = self.mlp(pts)  # (B·S, P, F)
         feat = feat * pt_mask.unsqueeze(-1)  # zero padded points
@@ -87,7 +88,7 @@ class LSTMEncoder(nn.Module):
         """
         Args
         ----
-        seq:         (B, S, F)
+        seq:         (B, S, F) where F is the point-net's out_dim.
         slice_mask:  (B, S)
 
         Returns

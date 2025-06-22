@@ -1,5 +1,5 @@
 """
-Logging configartion and common logger object.
+Logging configuration and common logger object.
 """
 
 import logging

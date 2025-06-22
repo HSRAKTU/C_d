@@ -1,3 +1,8 @@
+"""
+Loads .paddle_tensor point clouds, bins them into num_slices along axis.
+Pads the slices to target number of points per slice.
+"""
+
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -46,6 +51,10 @@ class PointCloudSlicer:
         return tensor.numpy()
 
     def generate_slices(self, points):
+        """
+        Evenly divides the chosen axis range into num_slices bins and returns a
+        list of (Nᵢ, 2) arrays where axis dimension is dropped.
+        """
         ax = self.axis_map[self.axis]
         coords = points[:, ax]
         min_val, max_val = coords.min(), coords.max()

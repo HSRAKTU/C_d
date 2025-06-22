@@ -30,7 +30,7 @@ from src.utils.logger import logging as logger
 
 class CdDataset(Dataset):
     """
-    Dataset yielding (x = (slices, point_mask, slice_mask), y = target) tensors.
+    Dataset yielding (x = (slices (S,P,2), point_mask (S,P), slice_mask (S,)), y = target(scalar)) tensors.
 
     Args:
         root_dir:   directory containing the padded/masked *.npz files.
@@ -88,7 +88,7 @@ class CdDataset(Dataset):
 
     # ---------------------------- I/O utils ----------------------------- #
     def _load_npz(self, fp: Path, raw: bool = False):
-        """Return slices, point_mask, slice_mask, Cd."""
+        """Return (slices, point_mask, slice_mask, Cd)"""
         data = np.load(fp, allow_pickle=True)
         slices = data["slices"]  # (S, P, 2)
         p_mask = data["point_mask"]  # (S, P)
@@ -105,6 +105,9 @@ class CdDataset(Dataset):
         return len(self.files)
 
     def __getitem__(self, idx: int):
+        """
+        Returns (x,y) where x is a 3-tuple of tensors and y is of shape (1,)
+        """
         slices, p_mask, s_mask, cd = self._load_npz(self.files[idx])
         x = (
             torch.from_numpy(slices).float(),
