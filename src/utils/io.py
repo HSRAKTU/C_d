@@ -8,8 +8,9 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 import joblib
+import pandas as pd
 
-from src.config.constants import SCALER_FILE, SUBSET_DIR
+from src.config.constants import DRAG_CSV, SCALER_FILE, SUBSET_DIR
 from src.utils.logger import logging as logger
 
 if TYPE_CHECKING:
@@ -61,3 +62,17 @@ def load_scaler(path: Path = SCALER_FILE) -> StandardScaler:
     scaler = joblib.load(path)
     logger.info(f"Loaded scaler from {path}")
     return scaler
+
+
+def load_cd_map(csv_path: Path = DRAG_CSV) -> dict[str, float]:
+    """
+    Load the master drag-coefficient table and return a dict
+    ``{design_id: average_Cd}``.
+    The CSV **must** contain columns ``Design`` and ``Average Cd``.
+    """
+    if not csv_path.is_file():
+        raise FileNotFoundError(csv_path)
+    df = pd.read_csv(csv_path, usecols=["Design", "Average Cd"])
+    cd_map = dict(zip(df["Design"], df["Average Cd"]))
+    logger.info(f"Loaded Cd table with {len(cd_map)} entries from {csv_path}")
+    return cd_map

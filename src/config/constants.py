@@ -19,6 +19,13 @@ SLICE_DIR = PROC_DIR / "slices"
 PADDED_MASKED_SLICES_DIR = PROC_DIR / "padded_masked_slices"
 SCALER_FILE = PROC_DIR / "scalars" / "scaler.pkl"  # <— single file
 
+
+# ------------------------------------------------------------------ #
+#  Cd table                                                          #
+# ------------------------------------------------------------------ #
+# Master CSV produced by the CFD post-processing workflow
+DRAG_CSV = RAW_DIR / "DrivAerNetPlusPlus_Drag_8k_cleaned.csv"
+
 # ------------------------------------------------------------------ #
 #  Pre-processing defaults                                           #
 # ------------------------------------------------------------------ #

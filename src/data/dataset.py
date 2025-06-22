@@ -93,7 +93,11 @@ class CdDataset(Dataset):
         slices = data["slices"]  # (S, P, 2)
         p_mask = data["point_mask"]  # (S, P)
         s_mask = data["slice_mask"]  # (S,)
-        cd = data["Cd"] if "Cd" in data else np.nan
+        if "Cd" not in data:
+            raise KeyError(
+                f"{fp} has no 'Cd' field – regenerate with updated preprocessing."
+            )
+        cd = data["Cd"]
         if raw:
             return slices, p_mask, s_mask, cd
         # ── scale ──

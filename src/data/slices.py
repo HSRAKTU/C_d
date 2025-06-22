@@ -15,7 +15,7 @@ from src.config.constants import (
     DEFAULT_SLICE_AXIS,
     DEFAULT_TARGET_POINTS,
 )
-from src.utils.io import load_design_ids
+from src.utils.io import load_cd_map, load_design_ids
 from src.utils.logger import logging as logger
 
 
@@ -136,6 +136,7 @@ def process_all_slices(
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
     design_ids = load_design_ids(split)
+    cd_table = load_cd_map()
     logger.info(f"Preparing split: {split} → {len(design_ids)} design IDs")
 
     all_files = [f for f in slice_dir.glob("*.npy")]
@@ -150,9 +151,19 @@ def process_all_slices(
                 slices, target_slices, target_points
             )
             car_id = fname.stem
+            design_id = car_id.split("_axis")[0]
+            cd_val = cd_table.get(design_id)
+            if cd_val is None:
+                logger.warning(f"Cd not found for {design_id} – file skipped")
+                continue
+
             out_path = output_dir / f"{car_id}.npz"
             np.savez_compressed(
-                out_path, slices=padded, point_mask=pmask, slice_mask=smask
+                out_path,
+                slices=padded,
+                point_mask=pmask,
+                slice_mask=smask,
+                Cd=cd_val,
             )
         except Exception as e:
             logger.warning(f"{fname.name} failed: {e}")
