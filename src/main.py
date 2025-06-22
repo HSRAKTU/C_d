@@ -195,6 +195,7 @@ def main() -> None:
                 sys.exit(1)
 
         run_training(
+            exp_name=args.exp_name,
             cfg_path=args.config,
             resume=resume,
             batch_size=args.batch_size,

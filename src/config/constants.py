@@ -20,12 +20,6 @@ PADDED_MASKED_SLICES_DIR = PROC_DIR / "padded_masked_slices"
 SCALER_FILE = PROC_DIR / "scalars" / "scaler.pkl"  # <— single file
 
 # ------------------------------------------------------------------ #
-#  Experiments                                                       #
-# ------------------------------------------------------------------ #
-CHECKPOINT_DIR = EXP_DIR / "checkpoints"
-TB_LOG_DIR = EXP_DIR / "tb-logs"
-
-# ------------------------------------------------------------------ #
 #  Pre-processing defaults                                           #
 # ------------------------------------------------------------------ #
 DEFAULT_NUM_SLICES = 80

@@ -36,9 +36,8 @@ from ignite.metrics.regression.r2_score import R2Score
 from torch.utils.data import DataLoader
 
 from src.config.constants import (  # :contentReference[oaicite:2]{index=2}
-    CHECKPOINT_DIR,
+    EXP_DIR,
     PADDED_MASKED_SLICES_DIR,
-    TB_LOG_DIR,
 )
 from src.data.dataset import CdDataset  # requires dataset.py implemented earlier
 from src.models.model import CdRegressor  # consolidated model module
@@ -106,6 +105,7 @@ def _eval_step(model, device):
 # Public API                                                                  #
 # --------------------------------------------------------------------------- #
 def run_training(
+    exp_name: str,
     cfg_path: str | Path,
     resume: Path | None = None,
     num_workers: int | None = None,
@@ -115,6 +115,7 @@ def run_training(
     Main entry-point called from CLI.
 
     Args:
+        exp_name: name of this experiment (used to create sub-directories for checkpoints and tb-logs)
         cfg_path: path to YAML / JSON describing the experiment.
         resume:   optional checkpoint to resume (full state: model, optimiser, trainer).
         num_workers / batch_size: override values in the config on the fly.
@@ -223,7 +224,7 @@ def run_training(
     # --------------------------------------------------------------------- #
     # TensorBoard                                                           #
     # --------------------------------------------------------------------- #
-    tb_logger = TensorboardLogger(log_dir=TB_LOG_DIR)
+    tb_logger = TensorboardLogger(log_dir=EXP_DIR / exp_name / "tb-logs")
     tb_logger.attach_output_handler(
         trainer,
         event_name=Events.ITERATION_COMPLETED(every=log_interval),
@@ -245,7 +246,7 @@ def run_training(
         return -eng.state.metrics["mae"]  # minimise MAE
 
     saver = ModelCheckpoint(
-        dirname=CHECKPOINT_DIR,
+        dirname=EXP_DIR / exp_name / "checkpoints",
         filename_prefix="best",
         n_saved=3,
         global_step_transform=global_step_from_engine(trainer),
