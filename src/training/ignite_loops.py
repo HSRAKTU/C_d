@@ -107,7 +107,7 @@ def _eval_step(model, device):
 # --------------------------------------------------------------------------- #
 def run_training(
     cfg_path: str | Path,
-    resume: str | None = None,
+    resume: Path | None = None,
     num_workers: int | None = None,
     batch_size: int | None = None,
 ):

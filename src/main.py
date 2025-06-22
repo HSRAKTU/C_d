@@ -40,6 +40,16 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description="Cd-prediction: slicing · training · evaluation · inference"
     )
+
+    # ---------------------------------------------------------------- #
+    # Experiment selector (isolates all outputs under experiments/‹exp-name›)
+    # ---------------------------------------------------------------- #
+    parser.add_argument(
+        "--exp-name",
+        type=str,
+        required=True,
+        help="Name for this experiment run (e.g. lr1e-3_bs32).",
+    )
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     # --------------------------------------------------------------------- #
@@ -178,20 +188,11 @@ def main() -> None:
 
     # ------------------------------ train --------------------------------- #
     elif args.command == "train":
-        resume = args.resume
-        if resume is None:
-            # Interactive prompt (require checkpoint) – complies with the user's spec
-            resume = input(
-                "🔄  Please provide a checkpoint path to resume from "
-                "(or press Enter to cancel): "
-            ).strip()
-            if not resume:
-                logger.error("No checkpoint supplied – training aborted.")
+        resume: Path | None = args.resume
+        if resume:
+            if not Path(resume).is_file():
+                logger.error(f"Checkpoint not found: {resume}")
                 sys.exit(1)
-
-        if not Path(resume).is_file():
-            logger.error(f"Checkpoint not found: {resume}")
-            sys.exit(1)
 
         run_training(
             cfg_path=args.config,
