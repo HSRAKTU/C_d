@@ -175,11 +175,9 @@ def run_training(
     # --------------------------------------------------------------------- #
     # Model, optimiser, criterion                                           #
     # --------------------------------------------------------------------- #
-    model = CdRegressor(**cfg["model"]).to(device)  # pass hyper-params from yaml
-    optim_cfg = cfg["optim"]
-    optimizer = getattr(torch.optim, optim_cfg.get("name", "Adam"))(
-        model.parameters(), **optim_cfg.get("params", {"lr": 1e-3})
-    )
+    model = CdRegressor(**cfg["model"]).to(device)
+    optim_params = cfg.get("optim", {}).get("params", {"lr": 1e-3})
+    optimizer = torch.optim.Adam(model.parameters(), **optim_params)
     criterion = nn.MSELoss()
 
     # --------------------------------------------------------------------- #
