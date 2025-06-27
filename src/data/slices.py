@@ -140,12 +140,15 @@ def process_all_slices(
     slice_dir = Path(slice_dir)
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
-    design_ids = load_design_ids(split)
+    if split == "all":
+        design_ids = load_design_ids("train") | load_design_ids("val") | load_design_ids("test")
+    else:
+        design_ids = load_design_ids(split)
     cd_table = load_cd_map()
     logger.info(f"Preparing split: {split} → {len(design_ids)} design IDs")
 
     all_files = [f for f in slice_dir.glob("*.npy")]
-    matched = [f for f in all_files if f.stem.split("_")[0] in design_ids]
+    matched = [f for f in all_files if f.stem.split("_axis")[0] in design_ids]
     logger.info(f"Matched {len(matched)} files in {slice_dir} for split '{split}'")
 
     for fname in tqdm(matched, desc=f"Pad/mask {split}", ncols=80):

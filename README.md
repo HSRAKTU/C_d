@@ -40,3 +40,11 @@ uv pip install . --index-strategy unsafe-best-match
 - The flag `--index-strategy unsafe-best-match` is **required** because `uv` prioritizes the first index where a package is found.  
   Since `torch` exists on PyPI (without the `+cu121` variant), `uv` needs explicit permission to install the GPU version from the secondary index.
 
+
+# About Project 
+
+First Download the dataset and extract it .
+Then Create Slices
+Then Create Pad_masked_slices
+Then Train model
+
