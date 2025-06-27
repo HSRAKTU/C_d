@@ -12,7 +12,7 @@ EXP_DIR = PROJECT_ROOT / "experiments"
 # ------------------------------------------------------------------ #
 #  Raw / processed paths                                             #
 # ------------------------------------------------------------------ #
-POINT_CLOUDS_DIR = RAW_DIR / "point_clouds"
+POINT_CLOUDS_DIR = RAW_DIR / "PointClouds"
 SUBSET_DIR = RAW_DIR / "subset_dir"
 
 SLICE_DIR = PROC_DIR / "slices"

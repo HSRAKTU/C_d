@@ -61,7 +61,7 @@ def build_parser() -> argparse.ArgumentParser:
     slice_p.add_argument("--num-slices", type=int, default=DEFAULT_NUM_SLICES)
     slice_p.add_argument("--axis", choices=["x", "y", "z"], default=DEFAULT_SLICE_AXIS)
     slice_p.add_argument("--max-files", type=int)
-    slice_p.add_argument("--split", choices=["train", "val", "test"], default="train")
+    slice_p.add_argument("--split", choices=["train", "val", "test" , "all"], default="train")
     slice_p.add_argument("--subset-dir", type=Path, default=SUBSET_DIR)
 
     # --------------------------------------------------------------------- #

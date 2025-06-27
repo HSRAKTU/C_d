@@ -1,32 +1,15 @@
-# Byte-compiled / optimized / DLL files
+# ────────────────────────────────
+# 📦 Python Bytecode & C Extensions
+# ────────────────────────────────
 __pycache__/
 *.py[cod]
 *$py.class
-
-# C extensions
 *.so
+*.pyd
 
-# Virtual environments
-.venv/
-venv/
-env/
-ENV/
-
-# Jupyter Notebook checkpoints
-.ipynb_checkpoints/
-
-# PyInstaller
-*.manifest
-*.spec
-
-# Installer logs
-pip-log.txt
-pip-delete-this-directory.txt
-
-# Unit test / coverage reports
-htmlcov/
-.tox/
-.nox/
+# ────────────────────────────────
+# 🧪 Test & Coverage Outputs
+# ────────────────────────────────
 .coverage
 .coverage.*
 .cache
@@ -34,113 +17,116 @@ nosetests.xml
 coverage.xml
 *.cover
 *.py,cover
+.tox/
+.nox/
 .hypothesis/
-
-# Translations
-*.mo
-*.pot
-
-# Django stuff:
-*.log
-local_settings.py
-db.sqlite3
-
-# Flask stuff:
-instance/
-.webassets-cache
-
-# Scrapy stuff:
-.scrapy
-
-# Sphinx documentation
-docs/_build/
-
-# PyBuilder
-target/
-
-# IPython
-profile_default/
-ipython_config.py
-
-# pyenv
-.python-version
-
-# Celery stuff
-celerybeat-schedule
-celerybeat.pid
-
-# SageMath parsed files
-*.sage.py
-
-# Environments
-.env
-.env.*
-.venv
-venv/
-ENV/
-env.bak/
-venv.bak/
-
-# Spyder project settings
-.spyderproject
-.spyproject
-
-# Rope project settings
-.ropeproject
-
-# mkdocs documentation
-/site
-
-# mypy
 .mypy_cache/
+.pyre/
+.pytype/
 .dmypy.json
 dmypy.json
 
-# Pyre type checker
-.pyre/
+# ────────────────────────────────
+# 🧪 Experiment Outputs & Logs
+# ────────────────────────────────
+logs/
+*.log
+*.tmp
+*.temp
+*.bak
+runs/
+allfiles.txt
+TODO.md
+experiments/tb-logs/
+experiments/checkpoints/
 
-# pytype static type analyzer
-.pytype/
-
-# Cython debug symbols
-cython_debug/
-
-# VS Code settings
-.vscode/
-
-# PyCharm settings
-.idea/
-
-# Data files
-/data/processed/*
-/data/raw/*
-
-# This only ignores the data directory at the root level.
-*.csv
-*.tsv
-*.npz
-*.h5
-*.hdf5
-*.pkl
-*.joblib
-
-# Model files
+# ────────────────────────────────
+# 🔬 Machine Learning Artifacts
+# ────────────────────────────────
 *.pt
 *.pth
 *.onnx
+*.joblib
+*.pkl
+*.npz
+*.h5
+*.hdf5
 
-# experiments data
-experiments/tb-logs/*
-experiments/checkpoints/*
-runs/
-logs/
+# ────────────────────────────────
+# 🗃️ Data Files
+# ────────────────────────────────
+*.csv
+*.tsv
+/data/raw/*
+/data/processed/*
 
-# Temporary files
-*.tmp
-*.temp
-*.log
-*.bak
-*.swp
-*~
-allfiles.txt
-TODO.md
+# ────────────────────────────────
+# 📦 Virtual Environments & Python Env Tools
+# ────────────────────────────────
+.venv/
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+.python-version
+.env
+.env.*
+
+# ────────────────────────────────
+# 🧰 IDEs and Editors
+# ────────────────────────────────
+.vscode/
+.idea/
+.spyderproject
+.spyproject
+.ropeproject
+
+# ────────────────────────────────
+# 🔧 Configuration & Misc
+# ────────────────────────────────
+ipython_config.py
+profile_default/
+instance/
+.webassets-cache/
+local_settings.py
+db.sqlite3
+*.manifest
+*.spec
+pip-log.txt
+pip-delete-this-directory.txt
+
+# ────────────────────────────────
+# 📚 Documentation Builds
+# ────────────────────────────────
+docs/_build/
+site/
+
+# ────────────────────────────────
+# 🛠 Framework-specific Ignored Files
+# ────────────────────────────────
+.scrapy/
+*.mo
+*.pot
+
+# ────────────────────────────────
+# Python bytecode
+# ────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+
+# ────────────────────────────────
+# C extensions
+# ────────────────────────────────
+*.so
+*.pyd
+
+# ────────────────────────────────
+# Build artifacts
+# ────────────────────────────────
+build/
+dist/
+*.egg-info/
+*.egg
+.eggs/

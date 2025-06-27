@@ -44,7 +44,12 @@ class PointCloudSlicer:
         if self.axis not in self.axis_map:
             raise ValueError("Axis must be one of 'x', 'y', or 'z'.")
 
-        self.valid_ids = load_design_ids(split, self.subset_dir)
+        if self.split == "all":
+            self.valid_ids = load_design_ids("train", self.subset_dir) | load_design_ids(
+                "val", self.subset_dir
+            ) | load_design_ids("test", self.subset_dir)
+        else:
+            self.valid_ids = load_design_ids(self.split, self.subset_dir)
 
     def load_point_cloud(self, file_path: Path):
         tensor = paddle.load(str(file_path))
