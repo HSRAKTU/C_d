@@ -17,7 +17,7 @@ from src.config.constants import (
     SUBSET_DIR
 )
 from src.utils.io import load_cd_map, load_design_ids
-from src.utils.logger import logging as logger
+from src.utils.logger import logger
 
 
 class PointCloudSlicer:

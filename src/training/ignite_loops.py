@@ -41,7 +41,9 @@ from src.config.constants import (  # :contentReference[oaicite:2]{index=2}
 )
 from src.data.dataset import CdDataset  # requires dataset.py implemented earlier
 from src.models.experiment_models.model_PTM import CdRegressor  # consolidated model module
-from src.utils.logger import logging as logger
+from src.utils.logger import logger
+
+
 
 
 # --------------------------------------------------------------------------- #

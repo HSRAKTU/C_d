@@ -11,7 +11,7 @@ import joblib
 import pandas as pd
 
 from src.config.constants import DRAG_CSV, SCALER_FILE, SUBSET_DIR
-from src.utils.logger import logging as logger
+from src.utils.logger import logger
 
 if TYPE_CHECKING:
     from sklearn.preprocessing import StandardScaler
