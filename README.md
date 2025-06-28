@@ -38,10 +38,12 @@ uv sync
   `https://download.pytorch.org/whl/cu121`
 
 
-# About Project 
+# Get Started
 
-First Download the dataset and extract it .
-Then Create Slices
-Then Create Pad_masked_slices
-Then Train model
+1. Download the data set.
+2. Slice (optionally visualize)
+3. Pad and Mask
+4. Train
+5. Evaluate
+6. Predict
 
