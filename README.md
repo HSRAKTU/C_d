@@ -22,23 +22,20 @@ Create and activate a virtual environment, then install dependencies with CUDA-e
 ```powershell
 uv venv .venv
 .venv/Scripts/activate
-uv pip install . --index-strategy unsafe-best-match
+uv sync
 ```
 
 ### On Linux / macOS (bash/zsh):
 ```bash
 uv venv .venv
 source .venv/bin/activate
-uv pip install . --index-strategy unsafe-best-match
+uv sync
 ```
 
 ## 📌 Notes
 
 - This project uses **PyTorch 2.3.0 + CUDA 12.1**, installed from the official PyTorch index:  
   `https://download.pytorch.org/whl/cu121`
-
-- The flag `--index-strategy unsafe-best-match` is **required** because `uv` prioritizes the first index where a package is found.  
-  Since `torch` exists on PyPI (without the `+cu121` variant), `uv` needs explicit permission to install the GPU version from the secondary index.
 
 
 # About Project 
