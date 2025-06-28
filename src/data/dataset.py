@@ -16,7 +16,6 @@ Normalisation rules
 from __future__ import annotations
 
 from pathlib import Path
-from typing import List
 
 import numpy as np
 import torch
@@ -24,7 +23,7 @@ from sklearn.preprocessing import StandardScaler
 from torch.utils.data import Dataset
 
 from src.config.constants import SCALER_FILE
-from src.utils.io import load_scaler, save_scaler
+from src.utils.io import load_design_ids, load_scaler, save_scaler
 from src.utils.logger import logging as logger
 
 
@@ -46,10 +45,13 @@ class CdDataset(Dataset):
         fit_scaler: bool = False,
     ):
         self.root_dir = Path(root_dir)
-        self.split = split
-        self.files: List[Path] = sorted((self.root_dir / split).glob("*.npz"))
+        design_ids = load_design_ids(split)
+        all_npz = self.root_dir.glob("*_axis-*.npz")
+        self.files = sorted(
+            p for p in all_npz if p.stem.split("_axis-")[0] in design_ids
+        )
         if not self.files:
-            raise RuntimeError(f"No data found in {self.root_dir / split}")
+            raise RuntimeError(f"No data found in {self.root_dir}")
 
         # ----------------------------------------------------------------- #
         # 1) Build / load scaler                                            #
