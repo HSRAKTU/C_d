@@ -1,7 +1,8 @@
 from src.models.experiment_models.model_PTM import Cd_PTM_Model
 from src.models.experiment_models.model_DTM import Cd_DTM_Model
 
-def get_cd_model(
+
+def get_model(
     model_type: str = "ptm",
     slice_input_dim: int = 2,
     slice_emb_dim: int = 256,
@@ -10,13 +11,14 @@ def get_cd_model(
     transformer_heads: int = 1,
     transformer_dropout: float = 0.1,
     max_num_slices: int = 80,
+    k_neighbors: int = 20,  # Only used by DGCNN
 ):
     """
     Return an instantiated Cd model based on model_type.
 
     Supported:
         - "ptm" → PointNet + Transformer + MLP
-        - "dtm" → DGCNN + Transformer + MLP (future)
+        - "dtm" → DGCNN + Transformer + MLP (uses dynamic slice batching)
 
     Returns:
         nn.Module
@@ -29,19 +31,18 @@ def get_cd_model(
             transformer_layers=transformer_layers,
             transformer_heads=transformer_heads,
             transformer_dropout=transformer_dropout,
-            encoder_emb_dim=slice_emb_dim,  # Unified embedding
             max_num_slices=max_num_slices,
         )
     elif model_type == "dtm":
-        return Cd_DTM_Model(  # To be implemented
+        return Cd_DTM_Model(
             slice_input_dim=slice_input_dim,
             slice_emb_dim=slice_emb_dim,
             transformer_hidden_dim=transformer_hidden_dim,
             transformer_layers=transformer_layers,
             transformer_heads=transformer_heads,
             transformer_dropout=transformer_dropout,
-            encoder_emb_dim=slice_emb_dim,
             max_num_slices=max_num_slices,
+            k_neighbors=k_neighbors,
         )
     else:
         raise ValueError(f"Unsupported model_type '{model_type}'. Use 'ptm' or 'dtm'.")
