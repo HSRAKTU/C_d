@@ -21,7 +21,7 @@ Create and activate a virtual environment, then install dependencies with CUDA-e
 ### On **Windows** (PowerShell)
 ```powershell
 uv venv .venv
-.venv/bin/activate
+.venv/Scripts/activate
 uv pip install . --index-strategy unsafe-best-match
 ```
 
