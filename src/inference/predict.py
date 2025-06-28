@@ -108,7 +108,6 @@ def run_inference(
     input_data: str | Path,
     output_path: str | Path,
     batch_size: int | None = None,
-    num_workers: int | None = None,
 ) -> List[Tuple[str, float]]:
     """
     Generate Cd predictions for a set of *.npz slice files.
@@ -133,11 +132,6 @@ def run_inference(
     dl = DataLoader(
         ds,
         batch_size=batch_size or cfg["data"].get("batch_size", 8),
-        num_workers=(
-            num_workers
-            if num_workers is not None
-            else cfg["data"].get("num_workers", 4)
-        ),
         pin_memory=(device.type == "cuda"),
         shuffle=False,
         collate_fn=_collate,

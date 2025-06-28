@@ -202,7 +202,6 @@ def main() -> None:
             cfg_path=args.config,
             resume=resume,
             batch_size=args.batch_size,
-            num_workers=args.num_workers,
         )
 
     # ---------------------------- evaluate -------------------------------- #
@@ -212,7 +211,6 @@ def main() -> None:
             checkpoint_path=args.checkpoint,
             split=args.split,
             batch_size=args.batch_size,
-            num_workers=args.num_workers,
         )
 
     # ----------------------------- predict -------------------------------- #
@@ -223,7 +221,6 @@ def main() -> None:
             input_data=args.input_data,
             output_path=args.output,
             batch_size=args.batch_size,
-            num_workers=args.num_workers,
         )
 
 

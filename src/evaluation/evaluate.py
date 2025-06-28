@@ -58,7 +58,6 @@ def run_evaluation(
     checkpoint_path: str | Path,
     split: str = "test",
     batch_size: int | None = None,
-    num_workers: int | None = None,
 ) -> Dict[str, float]:
     """
     Evaluate a checkpoint on a dataset split.
@@ -68,7 +67,6 @@ def run_evaluation(
         checkpoint_path: Path to *.pt checkpoint produced by Ignite.
         split:           Dataset split – "val" or "test".
         batch_size:      Optional override.
-        num_workers:     Optional override.
 
     Returns:
         Dict with metric names → values.
@@ -85,9 +83,6 @@ def run_evaluation(
     dl = DataLoader(
         ds,
         batch_size=batch_size or cfg["data"].get("batch_size", 8),
-        num_workers=num_workers
-        if num_workers is not None
-        else cfg["data"].get("num_workers", 4),
         pin_memory=(device.type == "cuda"),
         shuffle=False,
         drop_last=False,

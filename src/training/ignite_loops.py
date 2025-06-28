@@ -40,10 +40,10 @@ from src.config.constants import (  # :contentReference[oaicite:2]{index=2}
     PADDED_MASKED_SLICES_DIR,
 )
 from src.data.dataset import CdDataset  # requires dataset.py implemented earlier
-from src.models.experiment_models.model_PTM import CdRegressor  # consolidated model module
+from src.models.experiment_models.model_PTM import (
+    CdRegressor,
+)  # consolidated model module
 from src.utils.logger import logger
-
-
 
 
 # --------------------------------------------------------------------------- #
@@ -79,7 +79,6 @@ def run_training(
     exp_name: str,
     cfg_path: str | Path,
     resume: Path | None = None,
-    num_workers: int | None = None,
     batch_size: int | None = None,
 ):
     """
@@ -89,7 +88,6 @@ def run_training(
         exp_name: name of this experiment (used to create sub-directories for checkpoints and tb-logs)
         cfg_path: path to YAML / JSON describing the experiment.
         resume:   optional checkpoint to resume (full state: model, optimiser, trainer).
-        num_workers / batch_size: override values in the config on the fly.
     """
     cfg = _load_config(cfg_path)
 
@@ -98,8 +96,6 @@ def run_training(
     # --------------------------------------------------------------------- #
     if batch_size:
         cfg["data"]["batch_size"] = batch_size
-    if num_workers is not None:
-        cfg["data"]["num_workers"] = num_workers
     if resume:
         cfg["training"]["resume"] = resume
 
@@ -130,7 +126,6 @@ def run_training(
     train_loader = DataLoader(
         train_set,
         batch_size=cfg["data"].get("batch_size", 4),
-        num_workers=cfg["data"].get("num_workers", 4),
         pin_memory=(device.type == "cuda"),
         shuffle=True,
         drop_last=True,
@@ -138,7 +133,6 @@ def run_training(
     val_loader = DataLoader(
         val_set,
         batch_size=cfg["data"].get("batch_size", 4),
-        num_workers=cfg["data"].get("num_workers", 4),
         pin_memory=(device.type == "cuda"),
         shuffle=False,
         drop_last=False,
