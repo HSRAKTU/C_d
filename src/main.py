@@ -41,15 +41,6 @@ def build_parser() -> argparse.ArgumentParser:
         description="Cd-prediction: slicing · training · evaluation · inference"
     )
 
-    # ---------------------------------------------------------------- #
-    # Experiment selector (isolates all outputs under experiments/‹exp-name›)
-    # ---------------------------------------------------------------- #
-    parser.add_argument(
-        "--exp-name",
-        type=str,
-        required=True,
-        help="Name for this experiment run (e.g. lr1e-3_bs32).",
-    )
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     # --------------------------------------------------------------------- #
@@ -61,7 +52,9 @@ def build_parser() -> argparse.ArgumentParser:
     slice_p.add_argument("--num-slices", type=int, default=DEFAULT_NUM_SLICES)
     slice_p.add_argument("--axis", choices=["x", "y", "z"], default=DEFAULT_SLICE_AXIS)
     slice_p.add_argument("--max-files", type=int)
-    slice_p.add_argument("--split", choices=["train", "val", "test" , "all"], default="all")
+    slice_p.add_argument(
+        "--split", choices=["train", "val", "test", "all"], default="all"
+    )
     slice_p.add_argument("--subset-dir", type=Path, default=SUBSET_DIR)
 
     # --------------------------------------------------------------------- #
@@ -80,7 +73,9 @@ def build_parser() -> argparse.ArgumentParser:
     # pad                                                                   #
     # --------------------------------------------------------------------- #
     pad_p = subparsers.add_parser("pad", help="Pad & mask slice arrays")
-    pad_p.add_argument("-s", "--split", choices=["train", "val", "test" ,"all"], default = "all")
+    pad_p.add_argument(
+        "-s", "--split", choices=["train", "val", "test", "all"], default="all"
+    )
     pad_p.add_argument("--slice-dir", type=Path, default=SLICE_DIR)
     pad_p.add_argument("--output-dir", type=Path, default=PADDED_MASKED_SLICES_DIR)
     pad_p.add_argument("--target-slices", type=int, default=DEFAULT_NUM_SLICES)
@@ -102,6 +97,12 @@ def build_parser() -> argparse.ArgumentParser:
         type=Path,
         help="Full path to checkpoint to resume from.  "
         "If omitted, you will be prompted interactively.",
+    )
+    train_p.add_argument(
+        "--exp-name",
+        type=str,
+        required=True,
+        help="Name for this experiment run (e.g. lr1e-3_bs32).",
     )
     train_p.add_argument("--batch-size", type=int, help="Override batch size")
     train_p.add_argument("--num-workers", type=int, help="Override DataLoader workers")
