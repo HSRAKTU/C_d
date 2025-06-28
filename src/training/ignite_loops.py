@@ -40,7 +40,7 @@ from src.config.constants import (  # :contentReference[oaicite:2]{index=2}
     PADDED_MASKED_SLICES_DIR,
 )
 from src.data.dataset import CdDataset  # requires dataset.py implemented earlier
-from src.models.model import CdRegressor  # consolidated model module
+from src.models.experiment_models.model_PTM import CdRegressor  # consolidated model module
 from src.utils.logger import logging as logger
 
 
