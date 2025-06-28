@@ -26,7 +26,7 @@ from torch.utils.data import DataLoader, Dataset
 from src.config.constants import SCALER_FILE
 from src.models.experiment_models.model_PTM import CdRegressor
 from src.utils.io import load_scaler
-from src.utils.logger import logging as logger
+from src.utils.logger import logger
 
 
 # --------------------------------------------------------------------------- #

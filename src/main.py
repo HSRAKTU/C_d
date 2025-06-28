@@ -29,7 +29,7 @@ from src.data.slices import PointCloudSlicer, display_slices, process_all_slices
 from src.evaluation.evaluate import run_evaluation
 from src.inference.predict import run_inference
 from src.training.ignite_loops import run_training
-from src.utils.logger import logging as logger
+from src.utils.logger import logger
 
 
 # --------------------------------------------------------------------------- #

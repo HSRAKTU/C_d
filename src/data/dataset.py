@@ -24,7 +24,7 @@ from torch.utils.data import Dataset
 
 from src.config.constants import SCALER_FILE
 from src.utils.io import load_design_ids, load_scaler, save_scaler
-from src.utils.logger import logging as logger
+from src.utils.logger import logger
 
 
 class CdDataset(Dataset):
