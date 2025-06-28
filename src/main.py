@@ -85,6 +85,7 @@ def build_parser() -> argparse.ArgumentParser:
     pad_p.add_argument("--output-dir", type=Path, default=PADDED_MASKED_SLICES_DIR)
     pad_p.add_argument("--target-slices", type=int, default=DEFAULT_NUM_SLICES)
     pad_p.add_argument("--target-points", type=int, default=DEFAULT_TARGET_POINTS)
+    pad_p.add_argument("--subset-dir", type=Path, default=SUBSET_DIR)
 
     # --------------------------------------------------------------------- #
     # train                                                                 #
@@ -184,6 +185,7 @@ def main() -> None:
             split=args.split,
             target_slices=args.target_slices,
             target_points=args.target_points,
+            subset_dir=args.subset_dir,
         )
 
     # ------------------------------ train --------------------------------- #

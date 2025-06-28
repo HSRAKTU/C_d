@@ -14,6 +14,7 @@ from src.config.constants import (
     DEFAULT_NUM_SLICES,
     DEFAULT_SLICE_AXIS,
     DEFAULT_TARGET_POINTS,
+    SUBSET_DIR
 )
 from src.utils.io import load_cd_map, load_design_ids
 from src.utils.logger import logging as logger
@@ -136,14 +137,15 @@ def process_all_slices(
     split,
     target_slices=DEFAULT_NUM_SLICES,
     target_points=DEFAULT_TARGET_POINTS,
+    subset_dir=SUBSET_DIR,
 ):
     slice_dir = Path(slice_dir)
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
     if split == "all":
-        design_ids = load_design_ids("train") | load_design_ids("val") | load_design_ids("test")
+        design_ids = load_design_ids("train", subset_dir) | load_design_ids("val", subset_dir) | load_design_ids("test", subset_dir)
     else:
-        design_ids = load_design_ids(split)
+        design_ids = load_design_ids(split, subset_dir)
     cd_table = load_cd_map()
     logger.info(f"Preparing split: {split} → {len(design_ids)} design IDs")
 
