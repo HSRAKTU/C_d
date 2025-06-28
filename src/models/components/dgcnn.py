@@ -32,7 +32,7 @@ class EdgeConvSliceEncoder(nn.Module):
                 nn.ReLU(),
                 nn.Linear(128, emb_dim),
             ),
-            aggr="max"
+            aggr="max",
         )
 
     def forward(self, data: Batch) -> torch.Tensor:

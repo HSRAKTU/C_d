@@ -14,7 +14,7 @@ from src.config.constants import (
     DEFAULT_NUM_SLICES,
     DEFAULT_SLICE_AXIS,
     DEFAULT_TARGET_POINTS,
-    SUBSET_DIR
+    SUBSET_DIR,
 )
 from src.utils.io import load_cd_map, load_design_ids
 from src.utils.logger import logger
@@ -46,9 +46,11 @@ class PointCloudSlicer:
             raise ValueError("Axis must be one of 'x', 'y', or 'z'.")
 
         if self.split == "all":
-            self.valid_ids = load_design_ids("train", self.subset_dir) | load_design_ids(
-                "val", self.subset_dir
-            ) | load_design_ids("test", self.subset_dir)
+            self.valid_ids = (
+                load_design_ids("train", self.subset_dir)
+                | load_design_ids("val", self.subset_dir)
+                | load_design_ids("test", self.subset_dir)
+            )
         else:
             self.valid_ids = load_design_ids(self.split, self.subset_dir)
 
@@ -143,7 +145,11 @@ def process_all_slices(
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
     if split == "all":
-        design_ids = load_design_ids("train", subset_dir) | load_design_ids("val", subset_dir) | load_design_ids("test", subset_dir)
+        design_ids = (
+            load_design_ids("train", subset_dir)
+            | load_design_ids("val", subset_dir)
+            | load_design_ids("test", subset_dir)
+        )
     else:
         design_ids = load_design_ids(split, subset_dir)
     cd_table = load_cd_map()

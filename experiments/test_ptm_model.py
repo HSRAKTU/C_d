@@ -1,6 +1,7 @@
 import torch
 from src.models.experiment_models.model_PTM import Cd_PTM_Model
 
+
 def test_ptm_forward_pass():
     # Instantiate the model
     model = Cd_PTM_Model(
@@ -29,6 +30,7 @@ def test_ptm_forward_pass():
     print("✅ Forward pass successful")
     print("Output shape:", output.shape)  # Expect (B,)
     print("Output values:", output)
+
 
 if __name__ == "__main__":
     test_ptm_forward_pass()

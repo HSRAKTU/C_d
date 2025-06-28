@@ -3,14 +3,18 @@ import torch
 import torch.nn as nn
 
 
-def generate_sinusoidal_position_embeddings(max_seq_len: int, embedding_dim: int) -> torch.Tensor:
+def generate_sinusoidal_position_embeddings(
+    max_seq_len: int, embedding_dim: int
+) -> torch.Tensor:
     """
     Creates sinusoidal positional encodings of shape (1, max_seq_len, embedding_dim),
     compatible with Transformer input.
     """
     pe = torch.zeros(max_seq_len, embedding_dim)
     position = torch.arange(0, max_seq_len, dtype=torch.float).unsqueeze(1)
-    div_term = torch.exp(torch.arange(0, embedding_dim, 2).float() * (-math.log(10000.0) / embedding_dim))
+    div_term = torch.exp(
+        torch.arange(0, embedding_dim, 2).float() * (-math.log(10000.0) / embedding_dim)
+    )
     pe[:, 0::2] = torch.sin(position * div_term)
     pe[:, 1::2] = torch.cos(position * div_term)
     return pe.unsqueeze(0)  # shape: (1, max_seq_len, embedding_dim)
@@ -42,8 +46,8 @@ class TransformerSliceEncoder(nn.Module):
 
         # Fixed sinusoidal positional embeddings
         self.register_buffer(
-            'pos_encoder',
-            generate_sinusoidal_position_embeddings(max_seq_len, input_dim)
+            "pos_encoder",
+            generate_sinusoidal_position_embeddings(max_seq_len, input_dim),
         )
 
         encoder_layer = nn.TransformerEncoderLayer(
@@ -52,14 +56,16 @@ class TransformerSliceEncoder(nn.Module):
             dim_feedforward=hidden_dim * 2,
             dropout=dropout,
             batch_first=True,
-            activation="relu"
+            activation="relu",
         )
 
         self.transformer = nn.TransformerEncoder(encoder_layer, num_layers=num_layers)
         self.attn_pool = nn.Linear(input_dim, 1)
         self.dropout = nn.Dropout(dropout)
 
-    def forward(self, x: torch.Tensor, slice_mask: torch.Tensor | None = None) -> torch.Tensor:
+    def forward(
+        self, x: torch.Tensor, slice_mask: torch.Tensor | None = None
+    ) -> torch.Tensor:
         """
         Args:
             x: (B, S, D) - Input sequence of slice embeddings.
@@ -73,11 +79,13 @@ class TransformerSliceEncoder(nn.Module):
 
         # Build src_key_padding_mask if slice_mask is provided
         if slice_mask is not None:
-            src_key_padding_mask = (slice_mask == 0)  # True for pad
+            src_key_padding_mask = slice_mask == 0  # True for pad
         else:
             src_key_padding_mask = None
 
-        out = self.transformer(x, src_key_padding_mask=src_key_padding_mask)  # (B, S, D)
+        out = self.transformer(
+            x, src_key_padding_mask=src_key_padding_mask
+        )  # (B, S, D)
 
         # Attention pooling
         scores = self.attn_pool(out).squeeze(-1)  # (B, S)

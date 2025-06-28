@@ -19,12 +19,14 @@ class PointNet2D(nn.Module):
             nn.Conv1d(64, 128, 1),
             nn.LeakyReLU(),
             nn.Conv1d(128, emb_dim, 1),
-            nn.LeakyReLU()
+            nn.LeakyReLU(),
         )
 
         self.attn = nn.Conv1d(emb_dim, 1, 1)  # Attention layer: (B, 1, N)
 
-    def forward(self, x: torch.Tensor, mask: torch.Tensor | None = None) -> torch.Tensor:
+    def forward(
+        self, x: torch.Tensor, mask: torch.Tensor | None = None
+    ) -> torch.Tensor:
         """
         Args:
             x: (B, N, 2)         - Input points
@@ -39,7 +41,7 @@ class PointNet2D(nn.Module):
 
         if mask is not None:
             mask = mask.unsqueeze(1)  # (B, 1, N)
-            attn_logits = attn_logits.masked_fill(mask == 0, float('-inf'))
+            attn_logits = attn_logits.masked_fill(mask == 0, float("-inf"))
 
         attn_weights = torch.softmax(attn_logits, dim=2)  # (B, 1, N)
         embedding = torch.sum(features * attn_weights, dim=2)  # (B, emb_dim)

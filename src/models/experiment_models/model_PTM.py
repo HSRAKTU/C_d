@@ -27,11 +27,13 @@ class Cd_PTM_Model(nn.Module):
     ):
         super().__init__()
 
-        self.slice_encoder = PointNet2D(input_dim=slice_input_dim, emb_dim=slice_emb_dim)
+        self.slice_encoder = PointNet2D(
+            input_dim=slice_input_dim, emb_dim=slice_emb_dim
+        )
 
         self.temporal_encoder = TransformerSliceEncoder(
-            input_dim= slice_emb_dim,
-            hidden_dim= transformer_hidden_dim,
+            input_dim=slice_emb_dim,
+            hidden_dim=transformer_hidden_dim,
             num_layers=transformer_layers,
             nhead=transformer_heads,
             dropout=transformer_dropout,
@@ -40,7 +42,9 @@ class Cd_PTM_Model(nn.Module):
 
         self.head = CdRegressor(input_dim=encoder_emb_dim)
 
-    def forward(self, x: tuple[torch.Tensor, torch.Tensor, torch.Tensor]) -> torch.Tensor:
+    def forward(
+        self, x: tuple[torch.Tensor, torch.Tensor, torch.Tensor]
+    ) -> torch.Tensor:
         """
         Args:
             x: tuple of (slices, point_mask, slice_mask)
@@ -55,18 +59,20 @@ class Cd_PTM_Model(nn.Module):
         B, S, P, D = slices.shape
 
         # Flatten slices for PointNet
-        flat_pts = slices.view(B * S, P, D)         # (B·S, P, 2)
-        flat_mask = point_mask.view(B * S, P)       # (B·S, P)
+        flat_pts = slices.view(B * S, P, D)  # (B·S, P, 2)
+        flat_mask = point_mask.view(B * S, P)  # (B·S, P)
 
         # Encode each slice
         slice_embeds = self.slice_encoder(flat_pts, flat_mask)  # (B·S, emb_dim)
-        slice_embeds = slice_embeds.view(B, S, -1)               # (B, S, emb_dim)
+        slice_embeds = slice_embeds.view(B, S, -1)  # (B, S, emb_dim)
 
         # Zero out padded slices before transformer
         slice_embeds = slice_embeds * slice_mask.unsqueeze(-1)  # (B, S, emb_dim)
 
         # Temporal encoding via Transformer
-        global_embedding = self.temporal_encoder(slice_embeds, slice_mask)  # (B, emb_dim)
+        global_embedding = self.temporal_encoder(
+            slice_embeds, slice_mask
+        )  # (B, emb_dim)
 
         # Final Cd regression
         return self.head(global_embedding)  # (B,)
@@ -80,5 +86,3 @@ class Cd_PTM_Model(nn.Module):
         point_mask = torch.ones(batch_size, S, P)
         slice_mask = torch.ones(batch_size, S)
         return slices, point_mask, slice_mask
-
-

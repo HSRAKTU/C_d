@@ -83,9 +83,7 @@ class CdDataset(Dataset):
         logger.info("Fitting StadnardScalar on Cd targets")
         cds = np.array(
             [self._load_npz(fp, raw=True)[3] for fp in self.files], dtype=np.float32
-        ).reshape(
-            -1, 1
-        )  # (N, 1)
+        ).reshape(-1, 1)  # (N, 1)
         scaler = StandardScaler().fit(cds)
         save_scaler(scaler, SCALER_FILE)
         logger.info(f"Scaler saved → {SCALER_FILE}")
