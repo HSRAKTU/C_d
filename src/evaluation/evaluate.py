@@ -25,7 +25,7 @@ from torch.utils.data import DataLoader
 
 from src.config.constants import PADDED_MASKED_SLICES_DIR
 from src.data.dataset import CdDataset
-from src.models.model import CdRegressor
+from src.models.experiment_models.model_PTM import CdRegressor
 from src.utils.logger import logging as logger
 
 
