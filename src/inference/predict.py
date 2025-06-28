@@ -75,14 +75,13 @@ class InferenceDataset(Dataset):
     ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, str]:
         fp = self.files[idx]
         arr = dict(
-            **torch.load(fp)
-            if fp.suffix == ".pt"
-            else dict(np.load(fp, allow_pickle=True))
+            **(
+                torch.load(fp)
+                if fp.suffix == ".pt"
+                else dict(np.load(fp, allow_pickle=True))
+            )
         )
         slices = torch.as_tensor(arr["slices"]).float()
-        slices = torch.as_tensor(
-            self.scaler.transform(slices.reshape(-1, 2)).reshape(slices.shape)
-        ).float()
         p_mask = torch.as_tensor(arr["point_mask"]).float()
         s_mask = torch.as_tensor(arr["slice_mask"]).float()
         design_id = fp.stem
@@ -134,9 +133,11 @@ def run_inference(
     dl = DataLoader(
         ds,
         batch_size=batch_size or cfg["data"].get("batch_size", 8),
-        num_workers=num_workers
-        if num_workers is not None
-        else cfg["data"].get("num_workers", 4),
+        num_workers=(
+            num_workers
+            if num_workers is not None
+            else cfg["data"].get("num_workers", 4)
+        ),
         pin_memory=(device.type == "cuda"),
         shuffle=False,
         collate_fn=_collate,
@@ -151,7 +152,7 @@ def run_inference(
     logger.info(f"Loaded checkpoint {checkpoint_path}")
 
     # --------------------- Ignite inference engine ------------------------ #
-    predictions: List[Tuple[str, float]] = []
+    predictions_scaled: List[Tuple[str, float]] = []
 
     def _step(engine, batch):
         slices, p_mask, s_mask, ids = batch
@@ -167,9 +168,16 @@ def run_inference(
 
     @infer_engine.on(Events.ITERATION_COMPLETED)
     def _gather(engine):
-        predictions.extend(engine.state.output)
+        predictions_scaled.extend(engine.state.output)
 
     infer_engine.run(dl)
+
+    # ── inverse-transform to original Cd units ───────────────────────────── #
+    scaler = ds.scaler
+    predictions = [
+        (id_, float(scaler.inverse_transform(np.array([[cd]]))[0, 0]))
+        for id_, cd in predictions_scaled
+    ]
 
     # ---------------------------- save CSV -------------------------------- #
     output_path = Path(output_path)

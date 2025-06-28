@@ -2,7 +2,7 @@
 CdDataset
 ~~~~~~~~~
 Loads padded & masked 2-D slices from *.npz files, (optionally) normalises
-the (x, y) coordinates with a StandardScaler, and returns tensors ready for
+the C_d StandardScaler, and returns tensors ready for
 PyTorch-Ignite loops.
 
 Normalisation rules
@@ -54,7 +54,7 @@ class CdDataset(Dataset):
             raise RuntimeError(f"No data found in {self.root_dir}")
 
         # ----------------------------------------------------------------- #
-        # 1) Build / load scaler                                            #
+        # 1) Build / load Cd-scaler                                            #
         # ----------------------------------------------------------------- #
         try:
             if fit_scaler:
@@ -71,19 +71,22 @@ class CdDataset(Dataset):
 
         logger.info(
             f"{split:<5} dataset with {len(self)} samples | "
-            f"Scaler mean={self.scaler.mean_.round(3)} "
-            f"scale={self.scaler.scale_.round(3)}"
+            f"Scaler mean={self.scaler.mean_[0].round(3)} "
+            f"scale={self.scaler.scale_[0].round(3)}"
         )
 
     # ------------------------------ scaler ------------------------------ #
     def _fit_and_save_scaler(self) -> StandardScaler:
-        """Aggregate all valid points in this split and fit StandardScaler."""
-        logger.info("Fitting StandardScaler on point coordinates …")
-        points_iter = (self._load_npz(fp, raw=True)[0] for fp in self.files)
-        coords = np.concatenate(
-            [pts.reshape(-1, 2) for pts in points_iter], axis=0
-        )  # (N_total, 2)
-        scaler = StandardScaler().fit(coords)
+        """
+        Fit a StandardScalar on Cd values from the split.
+        """
+        logger.info("Fitting StadnardScalar on Cd targets")
+        cds = np.array(
+            [self._load_npz(fp, raw=True)[3] for fp in self.files], dtype=np.float32
+        ).reshape(
+            -1, 1
+        )  # (N, 1)
+        scaler = StandardScaler().fit(cds)
         save_scaler(scaler, SCALER_FILE)
         logger.info(f"Scaler saved → {SCALER_FILE}")
         return scaler
@@ -102,9 +105,11 @@ class CdDataset(Dataset):
         cd = data["Cd"]
         if raw:
             return slices, p_mask, s_mask, cd
-        # ── scale ──
-        slices = self.scaler.transform(slices.reshape(-1, 2)).reshape(slices.shape)
-        return slices, p_mask, s_mask, cd
+        # ── scale Cd only ──
+        cd_scaled = float(
+            self.scaler.transform(np.array(cd, dtype=np.float32).reshape(-1, 1))[0, 0]
+        )
+        return slices, p_mask, s_mask, cd_scaled
 
     # ------------------------- standard Dataset ------------------------- #
     def __len__(self) -> int:
