@@ -4,10 +4,10 @@ Pads the slices to target number of points per slice.
 """
 
 from pathlib import Path
+from typing import Literal, Optional
 
 import matplotlib.pyplot as plt
 import numpy as np
-import paddle
 from tqdm import tqdm
 
 from src.config.constants import (
@@ -16,21 +16,31 @@ from src.config.constants import (
     DEFAULT_TARGET_POINTS,
     SUBSET_DIR,
 )
-from src.utils.io import load_cd_map, load_design_ids
+from src.utils.io import load_cd_map, load_design_ids, load_point_cloud
 from src.utils.logger import logger
 
 
 class PointCloudSlicer:
     def __init__(
         self,
-        input_dir,
-        output_dir,
-        num_slices,
-        axis,
-        max_files,
-        split,
-        subset_dir,
-    ):
+        input_dir: Path,
+        output_dir: Path,
+        num_slices: int,
+        axis: str,
+        max_files: Optional[int],
+        split: Literal["train", "val", "test", "all"],
+        subset_dir: Path,
+    ) -> None:
+        """
+        Args:
+            input_dir: Path to the directory with the Point Clouds (.paddle_tensor files)
+            output_dir: Path to the directory where the slices (.npy files) will be saved.
+            num_slices: Number of slices to divide the point clouds into.
+            axis: Axis along which to slice the point clouds. Must be one of 'x', 'y', or 'z'.
+            max_files: Maximum number of files to process. If None, process all files.
+            split: The data split to slice.
+            subset_dir: Path to the directory with the design IDs for the split. (.txt files)
+        """
         self.input_dir = Path(input_dir)
         self.output_dir = Path(output_dir)
         self.num_slices = num_slices
@@ -54,39 +64,60 @@ class PointCloudSlicer:
         else:
             self.valid_ids = load_design_ids(self.split, self.subset_dir)
 
-    def load_point_cloud(self, file_path: Path):
-        tensor = paddle.load(str(file_path))
-        return tensor.numpy()
+    def generate_slices(self, points: np.ndarray) -> list[np.ndarray]:
+        """
+        Divides the point clouds along the axis `self.axis` into `self.num_slices` bins
+        and returns the slices.
 
-    def generate_slices(self, points):
+        Args:
+            points: A numpy ndarray of shape (N,3) where N is the number of points
+            in the point cloud.
+        Returns:
+            A list of length `self.num_slices` where each element is a 2-column array
+            of shape (N_i, 2), where N_i is the number of points in the i_th slice.
         """
-        Evenly divides the chosen axis range into num_slices bins and returns a
-        list of (Nᵢ, 2) arrays where axis dimension is dropped.
-        """
-        ax = self.axis_map[self.axis]
-        coords = points[:, ax]
-        min_val, max_val = coords.min(), coords.max()
-        edges = np.linspace(min_val, max_val, self.num_slices + 1)
+        axis = self.axis_map[self.axis]
+        coords_along_axis = points[:, axis]
+        min_val, max_val = coords_along_axis.min(), coords_along_axis.max()
+        bin_edges = np.linspace(min_val, max_val, self.num_slices + 1)
 
         slices = []
         for i in range(self.num_slices):
-            low, high = edges[i], edges[i + 1]
-            mask = (coords >= low) & (coords < high)
-            sl = points[mask]
-            sl = np.delete(sl, ax, axis=1)
-            slices.append(sl)
+            low, high = bin_edges[i], bin_edges[i + 1]
+            # create a boolean mask to identify the pionts that will fall in this bin
+            mask = (coords_along_axis >= low) & (coords_along_axis < high)
+            # get all the points that fall in this bin
+            slice_points = points[mask]
+
+            # drop the coordinates along `self.axis` to project all the points in this bin
+            # to the plane perpendicular to `self.axis`. This is one slice.
+            slice = np.delete(slice_points, axis, axis=1)
+            slices.append(slice)
+
         return slices
 
-    def process_file(self, file_path: Path):
-        points = self.load_point_cloud(file_path)
+    def process_file(self, file_path: Path) -> list[np.ndarray]:
+        """
+        Slice the point cloud and return the slices.
+
+        Args:
+            file_path: Path to the .paddle_tensor file.
+        Returns:
+            The list of slices for this point cloud.
+        """
+        points = load_point_cloud(file_path)
         slices = self.generate_slices(points)
         total_points = sum(len(sl) for sl in slices)
         logger.info(
-            f"{file_path.name} → {total_points} total points across {len(slices)} slices."
+            f"{file_path.name} -> {total_points} total points across {len(slices)} slices."
         )
         return slices
 
     def run(self):
+        """
+        Slice all the point clouds in the `self.input_dir` correspondings to the
+        design IDs for `self.split` and save the slices (.npy file) to `self.output_dir` for each.
+        """
         all_files = sorted(self.input_dir.glob("*.paddle_tensor"))
         filtered_files = [f for f in all_files if f.stem in self.valid_ids]
 
@@ -101,8 +132,8 @@ class PointCloudSlicer:
 
         for file_path in tqdm(filtered_files, desc=f"Slicing {self.split} set"):
             try:
-                car_id = file_path.stem
-                output_path = self.output_dir / f"{car_id}_axis-{self.axis}.npy"
+                design_id = file_path.stem
+                output_path = self.output_dir / f"{design_id}_axis-{self.axis}.npy"
                 slices = self.process_file(file_path)
                 np.save(output_path, np.array(slices, dtype=object), allow_pickle=True)
                 count_success += 1

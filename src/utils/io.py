@@ -9,15 +9,36 @@ from typing import TYPE_CHECKING
 
 import joblib
 import pandas as pd
-
+import paddle
 from src.config.constants import DRAG_CSV, SCALER_FILE, SUBSET_DIR
 from src.utils.logger import logger
 
 if TYPE_CHECKING:
     from sklearn.preprocessing import StandardScaler
+    import numpy as np
 
 
-def load_design_ids(split, subset_dir: Path = SUBSET_DIR):
+def load_point_cloud(file_path: Path) -> np.ndarray:
+    """
+    Args:
+        file_path: Path to the .paddle_tensor file.
+    Returns:
+        A numpy array of shape (N, 3) where N is the number of points in the point cloud.
+    """
+    tensor = paddle.load(str(file_path))
+    return tensor.numpy()
+
+
+def load_design_ids(split: str, subset_dir: Path = SUBSET_DIR) -> set[str]:
+    """
+    Load the design IDs for a given split from the subset directory.
+
+    Args:
+        split: The data split to load the design IDs for.
+        subset_dir: Path to the directory with the design IDs for the split. (.txt files)
+    Returns:
+        A set of design ID strings.
+    """
     split_file = split_file = Path(subset_dir) / f"{split}_design_ids.txt"
     if not split_file.is_file():
         raise FileNotFoundError(f"Split file not found: {split_file}")
