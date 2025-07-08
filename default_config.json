@@ -3,7 +3,7 @@
   "device": "cuda",
 
   "data": {
-    "batch_size": 4,
+    "batch_size": 4
   },
 
   "model": {
