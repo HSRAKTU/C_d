@@ -4,7 +4,7 @@ Pads the slices to target number of points per slice.
 """
 
 from pathlib import Path
-from typing import Literal, Optional
+from typing import Literal, Optional, Sequence, Tuple
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -147,31 +147,63 @@ class PointCloudSlicer:
 
 
 def pad_and_mask_slices(
-    slice_list, target_slices=DEFAULT_NUM_SLICES, target_points=DEFAULT_TARGET_POINTS
-):
-    padded = np.zeros((target_slices, target_points, 2), dtype=np.float32)
-    point_mask = np.zeros((target_slices, target_points), dtype=np.float32)
-    slice_mask = np.zeros((target_slices,), dtype=np.float32)
+    slices: Sequence[np.ndarray],
+    target_points=DEFAULT_TARGET_POINTS,
+) -> Tuple[np.ndarray, np.ndarray]:
+    """
+    Pad the slices to have a fixed (`target_points`) number of points per slice.
 
-    for i, sl in enumerate(slice_list):
+    Args:
+        slices: A sequence of slices, each a 2-column array of shape (N, 2).
+        target_points: The target number of points per slice.
+
+    Returns:
+        A tuple of two elements:
+        - padded: float32 ndarray of shape (num_slices, target_points, 2)
+        - point_mask: float32 ndarray of shape (num_slices, target_points).
+    """
+    num_slices = len(slices)
+    padded = np.zeros((num_slices, target_points, 2), dtype=np.float32)
+    point_mask = np.zeros((num_slices, target_points), dtype=np.float32)
+
+    for i, sl in enumerate(slices):
+        # expected shape of a slice: (N_i, 2)
         if sl.shape[0] == 0:
             continue
-        n_pts = min(sl.shape[0], target_points)
+        if target_points < sl.shape[0]:
+            raise ValueError(
+                f"Number of points in a slice is greater than {target_points}"
+            )
+        n_pts = sl.shape[0]
         padded[i, :n_pts] = sl[:n_pts]
         point_mask[i, :n_pts] = 1
-        slice_mask[i] = 1
 
-    return padded, point_mask, slice_mask
+    return padded, point_mask
 
 
-def process_all_slices(
-    slice_dir,
-    output_dir,
-    split,
-    target_slices=DEFAULT_NUM_SLICES,
-    target_points=DEFAULT_TARGET_POINTS,
+def prepare_dataset(
+    slice_dir: Path,
+    output_dir: Path,
+    split: Literal["train", "val", "test", "all"],
+    target_points: Optional[int] = None,
     subset_dir=SUBSET_DIR,
-):
+) -> None:
+    """
+    Prepare the dataset (.npz files) and save them to output_dir or
+    output_dir/padded_and_masked if target_points is provided.
+    The .npz files saved have the Cd zipped together with the slices
+    (and optionally point mask if `target_points` is provided).
+
+    Args:
+        slice_dir: Path to the directory with the slices (.npy files)
+        output_dir: Path to the directory where the prepared dataset (.npz files) will be saved.
+        split: The data split to prepare.
+        target_points: The target number of points per slice if padding is required.
+        subset_dir: Path to the directory with the design IDs for the split. (.txt files)
+
+    Returns:
+
+    """
     slice_dir = Path(slice_dir)
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -183,8 +215,8 @@ def process_all_slices(
         )
     else:
         design_ids = load_design_ids(split, subset_dir)
-    cd_table = load_cd_map()
-    logger.info(f"Preparing split: {split} → {len(design_ids)} design IDs")
+    cd_map = load_cd_map()
+    logger.info(f"Preparing split: {split} -> {len(design_ids)} design IDs")
 
     all_files = [f for f in slice_dir.glob("*.npy")]
     matched = [f for f in all_files if f.stem.split("_axis")[0] in design_ids]
@@ -194,28 +226,48 @@ def process_all_slices(
         in_path = fname
         try:
             slices = np.load(in_path, allow_pickle=True)
-            padded, pmask, smask = pad_and_mask_slices(
-                slices, target_slices, target_points
-            )
-            car_id = fname.stem
-            design_id = car_id.split("_axis")[0]
-            cd_val = cd_table.get(design_id)
+
+            processed_slices, point_mask = None, None
+
+            if target_points:
+                pad_dir = output_dir / "padded_and_masked"
+                pad_dir.mkdir(parents=True, exist_ok=True)
+
+                # pad the slices if `target_points` is provided.
+                # This is needed for backwards compatibility with LSTM model.
+                processed_slices, point_mask = pad_and_mask_slices(
+                    slices, target_points
+                )
+                save_dir = pad_dir
+            else:
+                processed_slices = slices
+                save_dir = output_dir
+
+            design_id = fname.stem
+            design_id = design_id.split("_axis")[0]
+            cd_val = cd_map.get(design_id)
             if cd_val is None:
                 logger.warning(f"Cd not found for {design_id} – file skipped")
                 continue
 
-            out_path = output_dir / f"{car_id}.npz"
-            np.savez_compressed(
-                out_path,
-                slices=padded,
-                point_mask=pmask,
-                slice_mask=smask,
-                Cd=cd_val,
-            )
+            out_path = save_dir / f"{design_id}.npz"
+            if target_points:
+                np.savez_compressed(
+                    out_path,
+                    slices=processed_slices,
+                    point_mask=point_mask,
+                    Cd=cd_val,
+                )
+            else:
+                np.savez_compressed(
+                    out_path,
+                    slices=processed_slices,
+                    Cd=cd_val,
+                )
         except Exception as e:
-            logger.warning(f"{fname.name} failed: {e}")
+            logger.warning(f"Preparing dataset for design_id: {fname.name} failed: {e}")
 
-    logger.info(f"Done: {len(matched)} → {output_dir}")
+    logger.info(f"Done: Saved {len(matched)} data points to {output_dir}")
 
 
 def display_slices(

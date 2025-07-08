@@ -87,9 +87,12 @@ def load_scaler(path: Path = SCALER_FILE) -> StandardScaler:
 
 def load_cd_map(csv_path: Path = DRAG_CSV) -> dict[str, float]:
     """
-    Load the master drag-coefficient table and return a dict
-    ``{design_id: average_Cd}``.
-    The CSV **must** contain columns ``Design`` and ``Average Cd``.
+    Load the drag-coefficient CSV and return a dict that maps design IDs to C_d.
+
+    Args:
+        csv_path: Path to the CSV file.
+    Returns:
+        A dict of the form `{design_id: Cd}`.
     """
     if not csv_path.is_file():
         raise FileNotFoundError(csv_path)

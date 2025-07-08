@@ -23,7 +23,7 @@ from ignite.metrics import MeanAbsoluteError, MeanSquaredError
 from ignite.metrics.regression.r2_score import R2Score
 from torch.utils.data import DataLoader
 
-from src.config.constants import PADDED_MASKED_SLICES_DIR
+from src.config.constants import PREPARED_DATASET_DIR
 from src.data.dataset import CdDataset
 from src.models.experiment_models.model_PTM import CdRegressor
 from src.utils.logger import logger
@@ -76,7 +76,7 @@ def run_evaluation(
 
     # ------------------------------- data -------------------------------- #
     ds = CdDataset(
-        root_dir=PADDED_MASKED_SLICES_DIR,
+        root_dir=PREPARED_DATASET_DIR,
         split=split,
         fit_scaler=False,
     )

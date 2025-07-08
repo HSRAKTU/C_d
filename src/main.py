@@ -20,12 +20,12 @@ from src.config.constants import (
     DEFAULT_NUM_SLICES,
     DEFAULT_SLICE_AXIS,
     DEFAULT_TARGET_POINTS,
-    PADDED_MASKED_SLICES_DIR,
+    PREPARED_DATASET_DIR,
     POINT_CLOUDS_DIR,
     SLICE_DIR,
     SUBSET_DIR,
 )
-from src.data.slices import PointCloudSlicer, display_slices, process_all_slices
+from src.data.slices import PointCloudSlicer, display_slices, prepare_dataset
 from src.evaluation.evaluate import run_evaluation
 from src.inference.predict import run_inference
 from src.training.ignite_loops import run_training
@@ -72,15 +72,14 @@ def build_parser() -> argparse.ArgumentParser:
     # --------------------------------------------------------------------- #
     # pad                                                                   #
     # --------------------------------------------------------------------- #
-    pad_p = subparsers.add_parser("pad", help="Pad & mask slice arrays")
-    pad_p.add_argument(
+    prep_p = subparsers.add_parser("prep", help="Prepare Dataset")
+    prep_p.add_argument(
         "-s", "--split", choices=["train", "val", "test", "all"], default="all"
     )
-    pad_p.add_argument("--slice-dir", type=Path, default=SLICE_DIR)
-    pad_p.add_argument("--output-dir", type=Path, default=PADDED_MASKED_SLICES_DIR)
-    pad_p.add_argument("--target-slices", type=int, default=DEFAULT_NUM_SLICES)
-    pad_p.add_argument("--target-points", type=int, default=DEFAULT_TARGET_POINTS)
-    pad_p.add_argument("--subset-dir", type=Path, default=SUBSET_DIR)
+    prep_p.add_argument("--slice-dir", type=Path, default=SLICE_DIR)
+    prep_p.add_argument("--output-dir", type=Path, default=PREPARED_DATASET_DIR)
+    prep_p.add_argument("--target-points", type=int)
+    prep_p.add_argument("--subset-dir", type=Path, default=SUBSET_DIR)
 
     # --------------------------------------------------------------------- #
     # train                                                                 #
@@ -179,12 +178,11 @@ def main() -> None:
         )
 
     # ------------------------------- pad ---------------------------------- #
-    elif args.command == "pad":
-        process_all_slices(
+    elif args.command == "prep":
+        prepare_dataset(
             slice_dir=args.slice_dir,
             output_dir=args.output_dir,
             split=args.split,
-            target_slices=args.target_slices,
             target_points=args.target_points,
             subset_dir=args.subset_dir,
         )

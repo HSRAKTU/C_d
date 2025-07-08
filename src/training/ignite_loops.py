@@ -37,7 +37,7 @@ from torch.utils.data import DataLoader
 
 from src.config.constants import (  # :contentReference[oaicite:2]{index=2}
     EXP_DIR,
-    PADDED_MASKED_SLICES_DIR,
+    PREPARED_DATASET_DIR,
 )
 from src.data.dataset import CdDataset  # requires dataset.py implemented earlier
 from src.models.experiment_models.model_PTM import (
@@ -111,12 +111,12 @@ def run_training(
     # --------------------------------------------------------------------- #
     first_run = cfg["training"].get("resume") is None
     train_set = CdDataset(
-        root_dir=PADDED_MASKED_SLICES_DIR,
+        root_dir=PREPARED_DATASET_DIR,
         split="train",
         fit_scaler=first_run,  # fit & save only on first run
     )
     val_set = CdDataset(
-        root_dir=PADDED_MASKED_SLICES_DIR,
+        root_dir=PREPARED_DATASET_DIR,
         split="val",
         fit_scaler=False,  # always load
     )

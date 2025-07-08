@@ -16,7 +16,7 @@ POINT_CLOUDS_DIR = RAW_DIR / "PointClouds"
 SUBSET_DIR = RAW_DIR / "subset_dir"
 
 SLICE_DIR = PROC_DIR / "slices"
-PADDED_MASKED_SLICES_DIR = PROC_DIR / "padded_masked_slices"
+PREPARED_DATASET_DIR = PROC_DIR / "prepared_dataset"
 SCALER_FILE = PROC_DIR / "scalars" / "scaler.pkl"  # <— single file
 
 
