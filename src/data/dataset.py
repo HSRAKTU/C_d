@@ -127,10 +127,9 @@ class CdDataset(Dataset):
         # ----------------------------------------------------------------- #
         self.scaler: StandardScaler
         try:
-            if fit_scaler:
-                self.scaler = self._fit_and_save_scaler()
-            else:
-                self.scaler = load_scaler(SCALER_FILE)
+            self.scaler = (
+                self._fit_and_save_scaler() if fit_scaler else load_scaler(SCALER_FILE)
+            )
             if self.scaler.mean_ is None or self.scaler.scale_ is None:
                 raise ValueError(
                     "Transformation Scaler not loaded correctly. Can't get the"

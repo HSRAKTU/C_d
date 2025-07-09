@@ -58,6 +58,7 @@ def run_training(
     cfg_path: str | Path,
     resume: Path | None = None,
     preapred_dataset_dir: Path = PREPARED_DATASET_DIR,
+    fit_scaler: bool = False,
 ):
     """
     Main entry-point called from CLI to run training.
@@ -89,12 +90,11 @@ def run_training(
     # --------------------------------------------------------------------- #
     # Data                                                                  #
     # --------------------------------------------------------------------- #
-    first_run: bool = cfg["training"].get("resume") is None
     padded: bool = cfg["data"]["padded"]
     train_set = CdDataset(
         root_dir=preapred_dataset_dir,
         split="train",
-        fit_scaler=first_run,
+        fit_scaler=fit_scaler,
         padded=padded,
     )
     val_set = CdDataset(
@@ -103,8 +103,6 @@ def run_training(
         fit_scaler=False,
         padded=padded,
     )
-    # share the very same scaler object to avoid second disk read
-    val_set.scaler = train_set.scaler
 
     train_loader = DataLoader(
         train_set,

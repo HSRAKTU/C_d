@@ -106,6 +106,12 @@ def build_parser() -> argparse.ArgumentParser:
     train_p.add_argument(
         "--preapared-dataset-dir", type=Path, default=PREPARED_DATASET_DIR
     )
+    train_p.add_argument(
+        "--fit-scaler",
+        action="store_true",
+        help="If set, fit a scaler to the training data. Otherwise, use the already"
+        "available scaler.",
+    )
 
     # --------------------------------------------------------------------- #
     # evaluate                                                              #
@@ -199,6 +205,7 @@ def main() -> None:
             cfg_path=args.config,
             resume=resume,
             preapred_dataset_dir=args.preapared_dataset_dir,
+            fit_scaler=args.fit_scaler,
         )
 
     # ---------------------------- evaluate -------------------------------- #
