@@ -104,7 +104,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Name for this experiment run (e.g. lr1e-3_bs32).",
     )
     train_p.add_argument("--batch-size", type=int, help="Override batch size")
-    train_p.add_argument("--num-workers", type=int, help="Override DataLoader workers")
 
     # --------------------------------------------------------------------- #
     # evaluate                                                              #
@@ -118,7 +117,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     eval_p.add_argument("--split", choices=["val", "test"], default="test")
     eval_p.add_argument("--batch-size", type=int)
-    eval_p.add_argument("--num-workers", type=int)
 
     # --------------------------------------------------------------------- #
     # predict                                                               #
@@ -137,7 +135,6 @@ def build_parser() -> argparse.ArgumentParser:
         "--output", type=Path, required=True, help="CSV path for predictions"
     )
     pred_p.add_argument("--batch-size", type=int)
-    pred_p.add_argument("--num-workers", type=int)
 
     return parser
 
