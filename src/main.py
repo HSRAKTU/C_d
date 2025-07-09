@@ -103,7 +103,9 @@ def build_parser() -> argparse.ArgumentParser:
         required=True,
         help="Name for this experiment run (e.g. lr1e-3_bs32).",
     )
-    train_p.add_argument("--batch-size", type=int, help="Override batch size")
+    train_p.add_argument(
+        "--preapared-dataset-dir", type=Path, default=PREPARED_DATASET_DIR
+    )
 
     # --------------------------------------------------------------------- #
     # evaluate                                                              #
@@ -196,7 +198,7 @@ def main() -> None:
             exp_name=args.exp_name,
             cfg_path=args.config,
             resume=resume,
-            batch_size=args.batch_size,
+            preapred_dataset_dir=args.preapared_dataset_dir,
         )
 
     # ---------------------------- evaluate -------------------------------- #

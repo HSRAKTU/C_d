@@ -4,7 +4,7 @@ Pads the slices to target number of points per slice.
 """
 
 from pathlib import Path
-from typing import Literal, Optional, Sequence, Tuple
+from typing import Literal, Optional, Sequence
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -149,7 +149,7 @@ class PointCloudSlicer:
 def pad_and_mask_slices(
     slices: Sequence[np.ndarray],
     target_points=DEFAULT_TARGET_POINTS,
-) -> Tuple[np.ndarray, np.ndarray]:
+) -> tuple[np.ndarray, np.ndarray]:
     """
     Pad the slices to have a fixed (`target_points`) number of points per slice.
 
@@ -190,7 +190,7 @@ def prepare_dataset(
 ) -> None:
     """
     Prepare the dataset (.npz files) and save them to output_dir or
-    output_dir/padded_and_masked if target_points is provided.
+    output_dir/padded if target_points is provided.
     The .npz files saved have the Cd zipped together with the slices
     (and optionally point mask if `target_points` is provided).
 
@@ -200,8 +200,6 @@ def prepare_dataset(
         split: The data split to prepare.
         target_points: The target number of points per slice if padding is required.
         subset_dir: Path to the directory with the design IDs for the split. (.txt files)
-
-    Returns:
 
     """
     slice_dir = Path(slice_dir)
@@ -230,7 +228,7 @@ def prepare_dataset(
             processed_slices, point_mask = None, None
 
             if target_points:
-                pad_dir = output_dir / "padded_and_masked"
+                pad_dir = output_dir / "padded"
                 pad_dir.mkdir(parents=True, exist_ok=True)
 
                 # pad the slices if `target_points` is provided.

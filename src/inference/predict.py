@@ -15,7 +15,7 @@ from __future__ import annotations
 import csv
 import json
 from pathlib import Path
-from typing import Dict, List, Sequence, Tuple, Union
+from typing import Dict, List, Sequence, Union
 
 import numpy as np
 import torch
@@ -72,7 +72,7 @@ class InferenceDataset(Dataset):
 
     def __getitem__(
         self, idx: int
-    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, str]:
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, str]:
         fp = self.files[idx]
         arr = dict(
             **(
@@ -108,7 +108,7 @@ def run_inference(
     input_data: str | Path,
     output_path: str | Path,
     batch_size: int | None = None,
-) -> List[Tuple[str, float]]:
+) -> List[tuple[str, float]]:
     """
     Generate Cd predictions for a set of *.npz slice files.
 
@@ -146,7 +146,7 @@ def run_inference(
     logger.info(f"Loaded checkpoint {checkpoint_path}")
 
     # --------------------- Ignite inference engine ------------------------ #
-    predictions_scaled: List[Tuple[str, float]] = []
+    predictions_scaled: List[tuple[str, float]] = []
 
     def _step(engine, batch):
         slices, p_mask, s_mask, ids = batch

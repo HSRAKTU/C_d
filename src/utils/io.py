@@ -7,6 +7,8 @@ from __future__ import annotations
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+import json
+import yaml
 import joblib
 import pandas as pd
 import paddle
@@ -100,3 +102,20 @@ def load_cd_map(csv_path: Path = DRAG_CSV) -> dict[str, float]:
     cd_map = dict(zip(df["Design"], df["Average Cd"]))
     logger.info(f"Loaded Cd table with {len(cd_map)} entries from {csv_path}")
     return cd_map
+
+
+def load_config(cfg_path: str | Path) -> dict:
+    """Load a YAML or JSON experiment-config file."""
+    cfg_path = Path(cfg_path)
+    if not cfg_path.exists():
+        raise FileNotFoundError(cfg_path)
+    if cfg_path.suffix in {".yml", ".yaml"}:
+        with cfg_path.open() as f:
+            cfg = yaml.safe_load(f)
+    elif cfg_path.suffix == ".json":
+        with cfg_path.open() as f:
+            cfg = json.load(f)
+    else:
+        raise ValueError(f"Unsupported config type: {cfg_path.suffix}")
+    logger.info(f"Loaded config from {cfg_path}")
+    return cfg

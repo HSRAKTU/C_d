@@ -1,10 +1,10 @@
 """
-Ignite-powered training loop for Cd prediction.
+Training loop for Cd prediction.
 
 Run from project root, e.g.:
 
     python -m src.main train \
-        --config experiments/baseline.yaml \
+        --config experiments/configuration.json \
         --resume experiments/checkpoints/best_model_val_loss=0.0123.pt
 
 The file expects:
@@ -15,14 +15,11 @@ The file expects:
 
 from __future__ import annotations
 
-import json
 import sys
 from pathlib import Path
-from typing import Dict, Union
 
 import torch
 import torch.nn as nn
-import yaml
 from ignite.engine import Events, create_supervised_evaluator, create_supervised_trainer
 from ignite.handlers import (
     Checkpoint,
@@ -44,26 +41,7 @@ from src.models.experiment_models.model_PTM import (
     CdRegressor,
 )  # consolidated model module
 from src.utils.logger import logger
-
-
-# --------------------------------------------------------------------------- #
-# Helpers                                                                     #
-# --------------------------------------------------------------------------- #
-def _load_config(cfg_path: Union[str, Path]) -> Dict:
-    """Load a YAML or JSON experiment-config file."""
-    cfg_path = Path(cfg_path)
-    if not cfg_path.exists():
-        raise FileNotFoundError(cfg_path)
-    if cfg_path.suffix in {".yml", ".yaml"}:
-        with cfg_path.open() as f:
-            cfg = yaml.safe_load(f)
-    elif cfg_path.suffix == ".json":
-        with cfg_path.open() as f:
-            cfg = json.load(f)
-    else:
-        raise ValueError(f"Unsupported config type: {cfg_path.suffix}")
-    logger.info(f"Loaded config from {cfg_path}")
-    return cfg
+from src.utils.io import load_config
 
 
 def _prepare_device(device_str: str | None = None) -> torch.device:
@@ -79,23 +57,25 @@ def run_training(
     exp_name: str,
     cfg_path: str | Path,
     resume: Path | None = None,
-    batch_size: int | None = None,
+    preapred_dataset_dir: Path = PREPARED_DATASET_DIR,
 ):
     """
-    Main entry-point called from CLI.
+    Main entry-point called from CLI to run training.
+    The training config is loaded from `cfg_path`.
+    The training is resumed if checkpoint path `resume` if provided.
 
     Args:
-        exp_name: name of this experiment (used to create sub-directories for checkpoints and tb-logs)
+        exp_name: name of this experiment (used to create sub-directories for
+        checkpoints and tb-logs)
         cfg_path: path to YAML / JSON describing the experiment.
         resume:   optional checkpoint to resume (full state: model, optimiser, trainer).
+        preapred_dataset_dir: path to the directory with the prepared dataset.
     """
-    cfg = _load_config(cfg_path)
+    cfg = load_config(cfg_path)
 
     # --------------------------------------------------------------------- #
-    # Overrides from CLI                                                    #
+    # Add resume path if provided                                           #
     # --------------------------------------------------------------------- #
-    if batch_size:
-        cfg["data"]["batch_size"] = batch_size
     if resume:
         cfg["training"]["resume"] = resume
 
@@ -109,16 +89,19 @@ def run_training(
     # --------------------------------------------------------------------- #
     # Data                                                                  #
     # --------------------------------------------------------------------- #
-    first_run = cfg["training"].get("resume") is None
+    first_run: bool = cfg["training"].get("resume") is None
+    padded: bool = cfg["data"]["padded"]
     train_set = CdDataset(
-        root_dir=PREPARED_DATASET_DIR,
+        root_dir=preapred_dataset_dir,
         split="train",
-        fit_scaler=first_run,  # fit & save only on first run
+        fit_scaler=first_run,
+        padded=padded,
     )
     val_set = CdDataset(
-        root_dir=PREPARED_DATASET_DIR,
+        root_dir=preapred_dataset_dir,
         split="val",
-        fit_scaler=False,  # always load
+        fit_scaler=False,
+        padded=padded,
     )
     # share the very same scaler object to avoid second disk read
     val_set.scaler = train_set.scaler
