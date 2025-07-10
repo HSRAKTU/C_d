@@ -23,6 +23,7 @@ import torch.nn as nn
 from ignite.engine import Events, create_supervised_evaluator, create_supervised_trainer
 from ignite.handlers import (
     Checkpoint,
+    DiskSaver,
     ModelCheckpoint,
     TensorboardLogger,
     global_step_from_engine,
@@ -41,7 +42,7 @@ from src.models.experiment_models.model_PTM import (
     CdRegressor,
 )  # consolidated model module
 from src.utils.logger import logger
-from src.utils.io import load_config
+from src.utils.io import load_config, unscale
 
 
 def _prepare_device(device_str: str | None = None) -> torch.device:
@@ -75,12 +76,6 @@ def run_training(
     cfg = load_config(cfg_path)
 
     # --------------------------------------------------------------------- #
-    # Add resume path if provided                                           #
-    # --------------------------------------------------------------------- #
-    if resume:
-        cfg["training"]["resume"] = resume
-
-    # --------------------------------------------------------------------- #
     # Reproducibility & device                                              #
     # --------------------------------------------------------------------- #
     seed = cfg.get("seed", 42)
@@ -104,20 +99,24 @@ def run_training(
         padded=padded,
     )
 
-    train_loader = DataLoader(
-        train_set,
-        batch_size=cfg["data"].get("batch_size", 4),
-        pin_memory=(device.type == "cuda"),
-        shuffle=True,
-        drop_last=True,
-    )
-    val_loader = DataLoader(
-        val_set,
-        batch_size=cfg["data"].get("batch_size", 4),
-        pin_memory=(device.type == "cuda"),
-        shuffle=False,
-        drop_last=False,
-    )
+    if padded:
+        train_loader = DataLoader(
+            train_set,
+            batch_size=cfg["data"].get("batch_size", 4),
+            pin_memory=(device.type == "cuda"),
+            shuffle=True,
+            drop_last=True,
+        )
+        val_loader = DataLoader(
+            val_set,
+            batch_size=cfg["data"].get("batch_size", 4),
+            pin_memory=(device.type == "cuda"),
+            shuffle=False,
+            drop_last=False,
+        )
+    else:
+        pass
+    # TODO: add PyG data loaders
 
     # --------------------------------------------------------------------- #
     # Model, optimiser, criterion                                           #
@@ -131,15 +130,28 @@ def run_training(
     # Ignite engines                                                        #
     # --------------------------------------------------------------------- #
     trainer = create_supervised_trainer(model, optimizer, criterion, device=device)
-    evaluator = create_supervised_evaluator(
+    train_evaluator = create_supervised_evaluator(
         model,
         metrics={
             "mae": MeanAbsoluteError(),
             "mse": MeanSquaredError(),
             "r2": R2Score(),
         },
+        output_transform=unscale,
         device=device,
     )
+    val_evaluator = create_supervised_evaluator(
+        model,
+        metrics={
+            "mae": MeanAbsoluteError(),
+            "mse": MeanSquaredError(),
+            "r2": R2Score(),
+        },
+        output_transform=unscale,
+        device=device,
+    )
+    # Loss calculated by trainer is scaled. Only for monitoring purpose.
+    # Metrics calculated by evaluators are unscaled.
 
     # Log running loss every N iterations
     log_interval = cfg["training"].get("log_interval", 100)
@@ -149,16 +161,16 @@ def run_training(
         logger.info(
             f"Epoch[{engine.state.epoch}] "
             f"Iter[{engine.state.iteration}] "
-            f"loss={engine.state.output:.4f}"
+            f"loss={engine.state.output:.4f}"  # scaled loss
         )
 
     # Evaluate & checkpoint every epoch
     @trainer.on(Events.EPOCH_COMPLETED)
     def _eval_and_log(engine):
-        evaluator.run(train_loader)
-        train_metrics = evaluator.state.metrics
-        evaluator.run(val_loader)
-        val_metrics = evaluator.state.metrics
+        train_evaluator.run(train_loader)
+        train_metrics = train_evaluator.state.metrics
+        val_evaluator.run(val_loader)
+        val_metrics = val_evaluator.state.metrics
         logger.info(
             f"Epoch {engine.state.epoch}: "
             f"train MAE={train_metrics['mae']:.4f} "
@@ -186,13 +198,15 @@ def run_training(
     )
 
     # --------------------------------------------------------------------- #
-    # Checkpointing & (optional) resume                                     #
+    # Checkpointing                                                         #
     # --------------------------------------------------------------------- #
     def score_fn(eng):
         return -eng.state.metrics["mae"]  # minimise MAE
 
-    saver = ModelCheckpoint(
-        dirname=EXP_DIR / exp_name / "checkpoints",
+    # save the best models based on val_evaluator's mae
+    # (meant for inference, not resuming training)
+    best_model_saver = ModelCheckpoint(
+        dirname=EXP_DIR / exp_name / "model_checkpoints",
         filename_prefix="best",
         n_saved=3,
         global_step_transform=global_step_from_engine(trainer),
@@ -200,11 +214,28 @@ def run_training(
         score_name="val_mae",
         require_empty=False,
     )
-    evaluator.add_event_handler(Events.COMPLETED, saver, {"model": model})
+    val_evaluator.add_event_handler(
+        Events.COMPLETED, best_model_saver, {"model": model}
+    )
+
+    # save the entire training state after every epoch of trainer
+    # (meant for resuming)
+    to_save = {"trainer": trainer, "model": model, "optimizer": optimizer}
+    training_state_saver = Checkpoint(
+        to_save=to_save,
+        save_handler=DiskSaver(
+            EXP_DIR / exp_name / "training_state_checkpoints",
+            create_dir=True,
+            prefix="training_state_",
+            atomic=True,
+        ),
+        n_saved=5,
+    )
+    trainer.add_event_handler(Events.EPOCH_COMPLETED, training_state_saver)
 
     # Resume full state if requested
-    if cfg["training"].get("resume"):
-        ckpt_fp = Path(cfg["training"]["resume"])
+    if resume:
+        ckpt_fp = Path(resume)
         if not ckpt_fp.exists():
             logger.error(f"Resume checkpoint not found: {ckpt_fp}")
             sys.exit(1)
@@ -213,6 +244,7 @@ def run_training(
         Checkpoint.load_objects(
             to_load=to_load, checkpoint=torch.load(ckpt_fp, map_location=device)
         )
+        # TODO: add the ability to overwrite learning rate of the optimizer
 
     # --------------------------------------------------------------------- #
     # Attach Progress Bar                                                   #
@@ -220,8 +252,10 @@ def run_training(
     train_pbar = ProgressBar(desc="Training", persist=True)
     train_pbar.attach(trainer, output_transform=lambda loss: {"batch_loss": loss})
 
-    val_pbar = ProgressBar(desc="Validation", persist=True)
-    val_pbar.attach(evaluator)
+    train_eval_pbar = ProgressBar(desc="Training Set Evaluation", persist=True)
+    train_eval_pbar.attach(train_evaluator)
+    val_eval_pbar = ProgressBar(desc="Validation Set Evaluation", persist=True)
+    val_eval_pbar.attach(val_evaluator)
 
     # --------------------------------------------------------------------- #
     # Start training                                                        #

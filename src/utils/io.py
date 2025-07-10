@@ -12,6 +12,7 @@ import yaml
 import joblib
 import pandas as pd
 import paddle
+import torch
 from src.config.constants import DRAG_CSV, SCALER_FILE, SUBSET_DIR
 from src.utils.logger import logger
 
@@ -119,3 +120,30 @@ def load_config(cfg_path: str | Path) -> dict:
         raise ValueError(f"Unsupported config type: {cfg_path.suffix}")
     logger.info(f"Loaded config from {cfg_path}")
     return cfg
+
+
+def unscale(output):
+    """
+    This is used to unscale the output from the model before passing it on for
+    metrics calculation. Ignite passes `(y_pred, y)` in the `output` argument.
+
+    Args:
+        output: A tuple of (y_pred, y)
+
+    Returns:
+        A tuple of unscaled prediction and real values. That is, (y_pred_u, y_u)
+    """
+    scaler = load_scaler(SCALER_FILE)
+
+    y_pred, y = output  # both still scaled
+    y_pred_u = (
+        torch.from_numpy(scaler.inverse_transform(y_pred.detach().cpu().reshape(-1, 1)))
+        .to(y_pred.device)
+        .view_as(y_pred)
+    )
+    y_u = (
+        torch.from_numpy(scaler.inverse_transform(y.detach().cpu().reshape(-1, 1)))
+        .to(y.device)
+        .view_as(y)
+    )
+    return y_pred_u, y_u
