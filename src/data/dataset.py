@@ -116,9 +116,7 @@ class CdDataset(Dataset):
         self.root_dir = Path(root_dir)
         design_ids = load_design_ids(split)
         all_npz_file_paths = self.root_dir.glob("*_axis-*.npz")
-        self.file_paths = sorted(
-            f for f in all_npz_file_paths if f.stem.split("_axis-")[0] in design_ids
-        )
+        self.file_paths = sorted(f for f in all_npz_file_paths if f.stem in design_ids)
         if not self.file_paths:
             raise RuntimeError(f"No data found in {self.root_dir}")
 
