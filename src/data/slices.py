@@ -9,9 +9,9 @@ from typing import Literal, Optional, Sequence
 import matplotlib.pyplot as plt
 import numpy as np
 from tqdm import tqdm
+from tqdm.contrib.logging import logging_redirect_tqdm
 
 from src.config.constants import (
-    DEFAULT_NUM_SLICES,
     DEFAULT_SLICE_AXIS,
     DEFAULT_TARGET_POINTS,
     SUBSET_DIR,
@@ -130,16 +130,19 @@ class PointCloudSlicer:
 
         count_success, count_error = 0, 0
 
-        for file_path in tqdm(filtered_files, desc=f"Slicing {self.split} set"):
-            try:
-                design_id = file_path.stem
-                output_path = self.output_dir / f"{design_id}_axis-{self.axis}.npy"
-                slices = self.process_file(file_path)
-                np.save(output_path, np.array(slices, dtype=object), allow_pickle=True)
-                count_success += 1
-            except Exception as e:
-                logger.error(f"Error processing {file_path}: {str(e)}")
-                count_error += 1
+        with logging_redirect_tqdm():
+            for file_path in tqdm(filtered_files, desc=f"Slicing {self.split} set"):
+                try:
+                    design_id = file_path.stem
+                    output_path = self.output_dir / f"{design_id}_axis-{self.axis}.npy"
+                    slices = self.process_file(file_path)
+                    np.save(
+                        output_path, np.array(slices, dtype=object), allow_pickle=True
+                    )
+                    count_success += 1
+                except Exception as e:
+                    logger.error(f"Error processing {file_path}: {str(e)}")
+                    count_error += 1
 
         logger.info(
             f"Finished slicing split '{self.split}': {count_success} succeeded, {count_error} failed."
