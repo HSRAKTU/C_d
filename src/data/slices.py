@@ -223,50 +223,56 @@ def prepare_dataset(
     matched = [f for f in all_files if f.stem.split("_axis")[0] in design_ids]
     logger.info(f"Matched {len(matched)} files in {slice_dir} for split '{split}'")
 
-    for fname in tqdm(matched, desc=f"Pad/mask {split}", ncols=80):
-        in_path = fname
-        try:
-            slices = np.load(in_path, allow_pickle=True)
+    with logging_redirect_tqdm():
+        for fname in tqdm(
+            matched,
+            desc=f"Prepare Dataset for split {split}, padded={True if target_points else False}",
+        ):
+            in_path = fname
+            try:
+                slices = np.load(in_path, allow_pickle=True)
 
-            processed_slices, point_mask = None, None
+                processed_slices, point_mask = None, None
 
-            if target_points:
-                pad_dir = output_dir / "padded"
-                pad_dir.mkdir(parents=True, exist_ok=True)
+                if target_points:
+                    pad_dir = output_dir / "padded"
+                    pad_dir.mkdir(parents=True, exist_ok=True)
 
-                # pad the slices if `target_points` is provided.
-                # This is needed for backwards compatibility with LSTM model.
-                processed_slices, point_mask = pad_and_mask_slices(
-                    slices, target_points
+                    # pad the slices if `target_points` is provided.
+                    # This is needed for backwards compatibility with LSTM model.
+                    processed_slices, point_mask = pad_and_mask_slices(
+                        slices, target_points
+                    )
+                    save_dir = pad_dir
+                else:
+                    processed_slices = slices
+                    save_dir = output_dir
+
+                design_id = fname.stem
+                design_id = design_id.split("_axis")[0]
+                cd_val = cd_map.get(design_id)
+                if cd_val is None:
+                    logger.warning(f"Cd not found for {design_id} – file skipped")
+                    continue
+
+                out_path = save_dir / f"{design_id}.npz"
+                if target_points:
+                    np.savez_compressed(
+                        out_path,
+                        slices=processed_slices,
+                        point_mask=point_mask,
+                        Cd=cd_val,
+                    )
+                else:
+                    np.savez_compressed(
+                        out_path,
+                        slices=processed_slices,
+                        Cd=cd_val,
+                    )
+            except Exception as e:
+                logger.warning(
+                    f"Preparing dataset for design_id: {fname.name} failed: {e}"
                 )
-                save_dir = pad_dir
-            else:
-                processed_slices = slices
-                save_dir = output_dir
-
-            design_id = fname.stem
-            design_id = design_id.split("_axis")[0]
-            cd_val = cd_map.get(design_id)
-            if cd_val is None:
-                logger.warning(f"Cd not found for {design_id} – file skipped")
-                continue
-
-            out_path = save_dir / f"{design_id}.npz"
-            if target_points:
-                np.savez_compressed(
-                    out_path,
-                    slices=processed_slices,
-                    point_mask=point_mask,
-                    Cd=cd_val,
-                )
-            else:
-                np.savez_compressed(
-                    out_path,
-                    slices=processed_slices,
-                    Cd=cd_val,
-                )
-        except Exception as e:
-            logger.warning(f"Preparing dataset for design_id: {fname.name} failed: {e}")
 
     logger.info(f"Done: Saved {len(matched)} data points to {output_dir}")
 
