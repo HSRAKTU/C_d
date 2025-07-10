@@ -41,8 +41,8 @@ from src.data.dataset import CdDataset  # requires dataset.py implemented earlie
 from src.models.experiment_models.model_PTM import (
     CdRegressor,
 )  # consolidated model module
-from src.utils.logger import logger
 from src.utils.io import load_config, unscale
+from src.utils.logger import logger
 
 
 def _prepare_device(device_str: str | None = None) -> torch.device:
@@ -190,7 +190,7 @@ def run_training(
         output_transform=lambda loss: {"batch_loss": loss},
     )
     tb_logger.attach_output_handler(
-        evaluator,
+        val_evaluator,
         event_name=Events.EPOCH_COMPLETED,
         tag="validation",
         metric_names=["mae", "mse", "r2"],
@@ -207,7 +207,7 @@ def run_training(
     # (meant for inference, not resuming training)
     best_model_saver = ModelCheckpoint(
         dirname=EXP_DIR / exp_name / "model_checkpoints",
-        filename_prefix="best",
+        filename_prefix="best_model_",
         n_saved=3,
         global_step_transform=global_step_from_engine(trainer),
         score_function=score_fn,

@@ -17,7 +17,7 @@ SUBSET_DIR = RAW_DIR / "subset_dir"
 
 SLICE_DIR = PROC_DIR / "slices"
 PREPARED_DATASET_DIR = PROC_DIR / "prepared_dataset"
-SCALER_FILE = PROC_DIR / "scalars" / "scaler.pkl"  # <— single file
+SCALER_FILE = PROC_DIR / "scalers" / "scaler.pkl"  # <— single file
 
 
 # ------------------------------------------------------------------ #
