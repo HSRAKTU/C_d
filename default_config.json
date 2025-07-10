@@ -3,7 +3,7 @@
   "device": "cuda",
 
   "data": {
-    "batch_size": 4,
+    "batch_size": 1,
     "padded": true
   },
 
@@ -19,8 +19,9 @@
     }
   },
 
+  "debugging": true,
   "training": {
-    "epochs": 50,
+    "epochs": 51,
     "log_interval": 100
   }
 }

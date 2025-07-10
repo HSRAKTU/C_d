@@ -98,6 +98,7 @@ class CdDataset(Dataset):
         split: str,
         fit_scaler: bool = False,
         padded: bool = False,
+        debugging: bool = False,
     ) -> None:
         """
         Initialize the dataset builder.
@@ -117,6 +118,8 @@ class CdDataset(Dataset):
         design_ids = load_design_ids(split)
         all_npz_file_paths = self.root_dir.glob("*.npz")
         self.file_paths = sorted(f for f in all_npz_file_paths if f.stem in design_ids)
+        if debugging:
+            self.file_paths = self.file_paths[:200]
         if not self.file_paths:
             raise RuntimeError(f"No data found in {self.root_dir}")
 

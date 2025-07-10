@@ -20,8 +20,8 @@ from src.config.constants import (
     DEFAULT_NUM_SLICES,
     DEFAULT_SLICE_AXIS,
     DEFAULT_TARGET_POINTS,
-    PREPARED_DATASET_DIR,
     POINT_CLOUDS_DIR,
+    PREPARED_DATASET_DIR,
     SLICE_DIR,
     SUBSET_DIR,
 )
@@ -78,7 +78,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     prep_p.add_argument("--slice-dir", type=Path, default=SLICE_DIR)
     prep_p.add_argument("--output-dir", type=Path, default=PREPARED_DATASET_DIR)
-    prep_p.add_argument("--target-points", type=int)
+    prep_p.add_argument("--target-points", type=int, default=DEFAULT_TARGET_POINTS)
     prep_p.add_argument("--subset-dir", type=Path, default=SUBSET_DIR)
 
     # --------------------------------------------------------------------- #
@@ -104,7 +104,7 @@ def build_parser() -> argparse.ArgumentParser:
         help="Name for this experiment run (e.g. lr1e-3_bs32).",
     )
     train_p.add_argument(
-        "--preapared-dataset-dir", type=Path, default=PREPARED_DATASET_DIR
+        "--prepared-dataset-dir", type=Path, default=PREPARED_DATASET_DIR
     )
     train_p.add_argument(
         "--fit-scaler",
@@ -204,7 +204,7 @@ def main() -> None:
             exp_name=args.exp_name,
             cfg_path=args.config,
             resume=resume,
-            preapred_dataset_dir=args.preapared_dataset_dir,
+            preapred_dataset_dir=args.prepared_dataset_dir,
             fit_scaler=args.fit_scaler,
         )
 

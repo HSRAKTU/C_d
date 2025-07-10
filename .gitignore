@@ -37,8 +37,7 @@ logs/
 runs/
 allfiles.txt
 TODO.md
-experiments/tb-logs/
-experiments/checkpoints/
+experiments/**
 
 # ────────────────────────────────
 # 🔬 Machine Learning Artifacts

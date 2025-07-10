@@ -42,7 +42,17 @@ uv sync
 
 1. Download the data set.
 2. Slice (optionally visualize)
-3. Pad and Mask
+```
+python -m src.main slice
+```
+3. Prepare Dataset
+```
+# For prepaing without padding:
+python -m src.main prep
+
+# For preparing with padding:
+python -m src.main prep --target-points 6500
+```
 4. Train
 5. Evaluate
 6. Predict
