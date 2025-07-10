@@ -150,7 +150,7 @@ def run_training(
         output_transform=unscale,
         device=device,
     )
-    # Loss calculated by trainer is scaled. Only for monitoring purpose.
+    # Loss calculated by trainer is scaled. Only for training and monitoring purpose.
     # Metrics calculated by evaluators are unscaled.
 
     # Log running loss every N iterations
