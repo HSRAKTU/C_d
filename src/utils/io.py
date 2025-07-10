@@ -4,21 +4,22 @@ Utility method for input/output from the disk.
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-import json
-import yaml
 import joblib
-import pandas as pd
 import paddle
+import pandas as pd
 import torch
+import yaml
+
 from src.config.constants import DRAG_CSV, SCALER_FILE, SUBSET_DIR
 from src.utils.logger import logger
 
 if TYPE_CHECKING:
-    from sklearn.preprocessing import StandardScaler
     import numpy as np
+    from sklearn.preprocessing import StandardScaler
 
 
 def load_point_cloud(file_path: Path) -> np.ndarray:
@@ -122,7 +123,7 @@ def load_config(cfg_path: str | Path) -> dict:
     return cfg
 
 
-def unscale(output):
+def unscale(x, y, y_pred):
     """
     This is used to unscale the output from the model before passing it on for
     metrics calculation. Ignite passes `(y_pred, y)` in the `output` argument.
@@ -135,7 +136,6 @@ def unscale(output):
     """
     scaler = load_scaler(SCALER_FILE)
 
-    y_pred, y = output  # both still scaled
     y_pred_u = (
         torch.from_numpy(scaler.inverse_transform(y_pred.detach().cpu().reshape(-1, 1)))
         .to(y_pred.device)
