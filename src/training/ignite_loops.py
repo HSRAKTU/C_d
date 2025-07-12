@@ -302,7 +302,16 @@ def run_training(
         Checkpoint.load_objects(
             to_load=to_load, checkpoint=torch.load(ckpt_fp, map_location=device)
         )
-        # TODO: add the ability to overwrite learning rate of the optimizer
+        # Override the learning-rate(s) if a value is provided in the config
+        cfg_lr = cfg.get("optim", {}).get("params", {}).get("lr")
+        if cfg_lr is not None:
+            for i, param_group in enumerate(optimizer.param_groups):
+                old_lr = param_group.get("lr", None)
+                if old_lr is not None and old_lr != cfg_lr:
+                    logger.info(
+                        f"Param-group {i}: overriding LR {old_lr:.3e} → {cfg_lr:.3e}"
+                    )
+                param_group["lr"] = cfg_lr
 
     # --------------------------------------------------------------------- #
     # Start training                                                        #
