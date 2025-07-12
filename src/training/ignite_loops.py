@@ -25,6 +25,7 @@ from ignite.engine import Events, create_supervised_evaluator, create_supervised
 from ignite.handlers import (
     Checkpoint,
     DiskSaver,
+    EarlyStopping,
     ModelCheckpoint,
     TensorboardLogger,
     global_step_from_engine,
@@ -50,10 +51,6 @@ from src.utils.logger import logger
 
 if TYPE_CHECKING:
     from sklearn.preprocessing import StandardScaler
-
-
-# TODO: Add support for early stopping
-# TODO: Do training eval during the training, do not iterate the whole thing again.
 
 
 def make_unscale(scaler: StandardScaler):
@@ -161,8 +158,8 @@ def run_training(
             drop_last=False,
         )
     else:
-        pass
-    # TODO: add PyG data loaders
+        # TODO: [LATER] add PyG data loaders later when we work with unpadded data
+        raise NotImplementedError
 
     # --------------------------------------------------------------------- #
     # Model, optimiser, criterion                                           #
@@ -254,11 +251,29 @@ def run_training(
         global_step_transform=global_step_from_engine(trainer),
     )
 
+    def score_fn(eng):
+        """
+        Score function needed for early stopping and checkpointing.
+        Should be used with Val Evaluator's engine.
+        Returns the negative of mae.
+        """
+        return -eng.state.metrics["mae"]  # minimise MAE
+
+    # --------------------------------------------------------------------- #
+    # Early stopping                                                        #
+    # --------------------------------------------------------------------- #
+    early_stop_handler = EarlyStopping(
+        patience=cfg["training"].get("early_stop_patience", 10),
+        score_function=score_fn,
+        trainer=trainer,
+        min_delta=cfg["training"].get("early_stop_min_delta", 0.0),
+        cumulative_delta=False,
+    )
+    val_evaluator.add_event_handler(Events.COMPLETED, early_stop_handler)
+
     # --------------------------------------------------------------------- #
     # Checkpointing                                                         #
     # --------------------------------------------------------------------- #
-    def score_fn(eng):
-        return -eng.state.metrics["mae"]  # minimise MAE
 
     # save the best models based on val_evaluator's mae
     # (meant for inference, not resuming training)

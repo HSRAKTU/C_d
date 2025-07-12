@@ -21,6 +21,8 @@
 
   "debugging": true,
   "training": {
+    "early_stop_patience": 10,
+    "early_stop_min_delta": 0.0,
     "epochs": 51,
     "log_interval": 100
   }
