@@ -1,4 +1,4 @@
-# 🚀 Project Setup
+# Project Setup
 
 This project uses [`uv`](https://github.com/astral-sh/uv) for fast, reproducible Python environments and dependency resolution.
 
@@ -32,28 +32,42 @@ source .venv/bin/activate
 uv sync
 ```
 
-## 📌 Notes
-
-- This project uses **PyTorch 2.3.0 + CUDA 12.1**, installed from the official PyTorch index:  
-  `https://download.pytorch.org/whl/cu121`
-
 
 # Get Started
 
-1. Download the data set.
-2. Slice (optionally visualize)
+1. Download and clean the data set.
+
+2. Slice the 3D Point Clouds(optionally visualize)
+
+Default location of Point Clouds: `./data/raw/PointClouds/`
+
 ```
+
 python -m src.main slice
+
 ```
+
 3. Prepare Dataset
+
 ```
-# For prepaing without padding:
+
+# For prepaing without padding and masking:
 python -m src.main prep
 
-# For preparing with padding:
-python -m src.main prep --target-points 6500
+# For preparing with padding and masking:
+python -m src.main prep --pad --target-points 6500
+
 ```
+
+
 4. Train
+
+```
+
+python -m src.main train --config "path/to/config.json" --resume --fit-scalar
+
+```
+
 5. Evaluate
 6. Predict
 

@@ -4,8 +4,8 @@ Main command-line entry-point for the Cd-prediction project.
 Run from the project root, e.g.
 
     python -m src.main train \
-        --config experiments/baseline.yaml \
-        --resume experiments/checkpoints/best_model_val_mae=0.012.pt
+        --config experiments/exp_name/config.json \
+        --resume experiments/exp_name/checkpoints/best_model_val_mae=-0.012.pt
 """
 
 from __future__ import annotations
@@ -32,9 +32,6 @@ from src.training.ignite_loops import run_training
 from src.utils.logger import logger
 
 
-# --------------------------------------------------------------------------- #
-# CLI factory                                                                 #
-# --------------------------------------------------------------------------- #
 def build_parser() -> argparse.ArgumentParser:
     """Configure argparse sub-commands."""
     parser = argparse.ArgumentParser(
@@ -78,6 +75,11 @@ def build_parser() -> argparse.ArgumentParser:
     )
     prep_p.add_argument("--slice-dir", type=Path, default=SLICE_DIR)
     prep_p.add_argument("--output-dir", type=Path, default=PREPARED_DATASET_DIR)
+    prep_p.add_argument(
+        "--pad",
+        action="store_true",
+        help="If set, the slices are padded and masked. Use the flag --target-points to specify the number of points per slice.",
+    )
     prep_p.add_argument("--target-points", type=int, default=DEFAULT_TARGET_POINTS)
     prep_p.add_argument("--subset-dir", type=Path, default=SUBSET_DIR)
 
@@ -124,7 +126,6 @@ def build_parser() -> argparse.ArgumentParser:
         "--checkpoint", type=Path, required=True, help="Path to model *.pt file"
     )
     eval_p.add_argument("--split", choices=["val", "test"], default="test")
-    eval_p.add_argument("--batch-size", type=int)
 
     # --------------------------------------------------------------------- #
     # predict                                                               #
@@ -184,11 +185,16 @@ def main() -> None:
 
     # ------------------------------- pad ---------------------------------- #
     elif args.command == "prep":
+        if args.pad:
+            target_points = args.target_points
+        else:
+            target_points = None
+
         prepare_dataset(
             slice_dir=args.slice_dir,
             output_dir=args.output_dir,
             split=args.split,
-            target_points=args.target_points,
+            target_points=target_points,
             subset_dir=args.subset_dir,
         )
 
@@ -214,7 +220,6 @@ def main() -> None:
             cfg_path=args.config,
             checkpoint_path=args.checkpoint,
             split=args.split,
-            batch_size=args.batch_size,
         )
 
     # ----------------------------- predict -------------------------------- #

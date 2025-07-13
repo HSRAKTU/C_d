@@ -9,7 +9,7 @@ Run from project root, e.g.:
 
 The file expects:
 *   A CD dataset (`src.data.dataset.CdDataset`)
-*   A model (`src.models.model.CdRegressor`)
+*   A model
 *   Project-wide paths in `src.config.constants`
 """
 
@@ -36,21 +36,30 @@ from ignite.metrics.regression.r2_score import R2Score
 from torch.utils.data import DataLoader
 from tqdm.contrib.logging import logging_redirect_tqdm
 
-from src.config.constants import (  # :contentReference[oaicite:2]{index=2}
+from src.config.constants import (
     EXP_DIR,
     PREPARED_DATASET_DIR,
 )
-from src.data.dataset import CdDataset  # requires dataset.py implemented earlier
+from src.data.dataset import (
+    CdDataset,
+    ragged_collate_fn,
+)  # requires dataset.py implemented earlier
 
-# from src.models.experiment_models.model_PTM import (
-#     CdRegressor,
-# )  # consolidated model module
-from src.models.model_test import CdRegressor
+from src.models.model import get_model
 from src.utils.io import load_config
 from src.utils.logger import logger
 
 if TYPE_CHECKING:
     from sklearn.preprocessing import StandardScaler
+
+
+def prepare_ragged_batch_fn(batch, device, non_blocking):
+    slice_batches, cd_values = batch
+    # move each PyG Batch
+    slice_batches = [sb.to(device) for sb in slice_batches]
+    # move targets
+    cd_values = cd_values.to(device, non_blocking=non_blocking)
+    return slice_batches, cd_values
 
 
 def make_unscale(scaler: StandardScaler):
@@ -118,6 +127,7 @@ def run_training(
     # --------------------------------------------------------------------- #
     seed = cfg.get("seed", 42)
     debugging = cfg.get("debugging", False)
+    batch_size = cfg["data"].get("batch_size", 4)
     torch.manual_seed(seed)
     device = _prepare_device(cfg.get("device"))
 
@@ -142,62 +152,100 @@ def run_training(
     scaler = train_set.scaler
     unscale_fn = make_unscale(scaler=scaler)
 
+    # --------------------------------------------------------------------- #
+    # Model, optimiser, criterion                                           #
+    # --------------------------------------------------------------------- #
+    model_type = cfg["model"]["model_type"]
+    model = get_model(model_type=model_type, **cfg["model"][model_type]).to(device)
+    optim_params = cfg.get("optim", {}).get("params", {"lr": 1e-3})
+    optimizer = torch.optim.Adam(model.parameters(), **optim_params)
+    criterion = nn.MSELoss()
+
     if padded:
         train_loader = DataLoader(
             train_set,
-            batch_size=cfg["data"].get("batch_size", 4),
+            batch_size=batch_size,
             pin_memory=(device.type == "cuda"),
             shuffle=True,
             drop_last=True,
         )
         val_loader = DataLoader(
             val_set,
-            batch_size=cfg["data"].get("batch_size", 4),
+            batch_size=batch_size,
             pin_memory=(device.type == "cuda"),
             shuffle=False,
             drop_last=False,
         )
+        trainer = create_supervised_trainer(model, optimizer, criterion, device=device)
+        train_evaluator = create_supervised_evaluator(
+            model,
+            metrics={
+                "mae": MeanAbsoluteError(),
+                "mse": MeanSquaredError(),
+                "r2": R2Score(),
+            },
+            output_transform=unscale_fn,
+            device=device,
+        )
+        val_evaluator = create_supervised_evaluator(
+            model,
+            metrics={
+                "mae": MeanAbsoluteError(),
+                "mse": MeanSquaredError(),
+                "r2": R2Score(),
+            },
+            output_transform=unscale_fn,
+            device=device,
+        )
     else:
-        # TODO: [LATER] add PyG data loaders later when we work with unpadded data
-        raise NotImplementedError
+        train_loader = DataLoader(
+            train_set,
+            shuffle=True,
+            drop_last=True,
+            batch_size=batch_size,
+            pin_memory=(device.type == "cuda"),
+            collate_fn=ragged_collate_fn,
+        )
+        val_loader = DataLoader(
+            val_set,
+            shuffle=False,
+            drop_last=False,
+            batch_size=batch_size,
+            pin_memory=(device.type == "cuda"),
+            collate_fn=ragged_collate_fn,
+        )
+        trainer = create_supervised_trainer(
+            model,
+            optimizer,
+            criterion,
+            device=device,
+            prepare_batch=prepare_ragged_batch_fn,
+        )
+        train_evaluator = create_supervised_evaluator(
+            model,
+            metrics={
+                "mae": MeanAbsoluteError(),
+                "mse": MeanSquaredError(),
+                "r2": R2Score(),
+            },
+            output_transform=unscale_fn,
+            prepare_batch=prepare_ragged_batch_fn,
+            device=device,
+        )
+        val_evaluator = create_supervised_evaluator(
+            model,
+            metrics={
+                "mae": MeanAbsoluteError(),
+                "mse": MeanSquaredError(),
+                "r2": R2Score(),
+            },
+            output_transform=unscale_fn,
+            device=device,
+            prepare_batch=prepare_ragged_batch_fn,
+        )
 
     # --------------------------------------------------------------------- #
-    # Model, optimiser, criterion                                           #
-    # --------------------------------------------------------------------- #
-    model = CdRegressor(**cfg["model"]).to(device)
-    optim_params = cfg.get("optim", {}).get("params", {"lr": 1e-3})
-    optimizer = torch.optim.Adam(model.parameters(), **optim_params)
-    criterion = nn.MSELoss()
-
-    # --------------------------------------------------------------------- #
-    # Ignite engines                                                        #
-    # --------------------------------------------------------------------- #
-    trainer = create_supervised_trainer(model, optimizer, criterion, device=device)
-    train_evaluator = create_supervised_evaluator(
-        model,
-        metrics={
-            "mae": MeanAbsoluteError(),
-            "mse": MeanSquaredError(),
-            "r2": R2Score(),
-        },
-        output_transform=unscale_fn,
-        device=device,
-    )
-    val_evaluator = create_supervised_evaluator(
-        model,
-        metrics={
-            "mae": MeanAbsoluteError(),
-            "mse": MeanSquaredError(),
-            "r2": R2Score(),
-        },
-        output_transform=unscale_fn,
-        device=device,
-    )
-    # Loss calculated by trainer is scaled. Only for training and monitoring purpose.
-    # Metrics calculated by evaluators are unscaled.
-
-    # --------------------------------------------------------------------- #
-    # Attach Progress Bar                                                   #
+    # Logging and Monitoring                                                #
     # --------------------------------------------------------------------- #
     train_pbar = ProgressBar(desc="Training", persist=True)
     train_pbar.attach(trainer, output_transform=lambda loss: {"batch_loss": loss})

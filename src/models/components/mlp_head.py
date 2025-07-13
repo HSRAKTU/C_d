@@ -5,14 +5,15 @@ import torch.nn as nn
 class CdRegressor(nn.Module):
     """
     Regression MLP that maps a global embedding vector to a scalar Cd value.
-
-    Args:
-        input_dim (int): Dimension of the input embedding (e.g., 256)
-    Output:
-        Tensor of shape (B,) – scalar Cd values per input
     """
 
     def __init__(self, input_dim: int = 256):
+        """
+        Args:
+            input_dim: Dimension of the input embedding
+        Output:
+            Tensor of shape (B,) – scalar Cd values per input
+        """
         super().__init__()
         self.net = nn.Sequential(
             nn.Linear(input_dim, 256),

@@ -23,14 +23,6 @@ def generate_sinusoidal_position_embeddings(
 class TransformerSliceEncoder(nn.Module):
     """
     Transformer encoder with sinusoidal positional encoding and attention pooling.
-
-    Args:
-        input_dim (int): Dimension of input features per slice.
-        hidden_dim (int): Internal feedforward dimension.
-        num_layers (int): Number of transformer encoder layers.
-        nhead (int): Number of attention heads.
-        dropout (float): Dropout probability.
-        max_seq_len (int): Maximum number of slices expected (default 80).
     """
 
     def __init__(
@@ -42,6 +34,15 @@ class TransformerSliceEncoder(nn.Module):
         dropout: float = 0.1,
         max_seq_len: int = 80,
     ):
+        """
+        Args:
+            input_dim: Dimension of input features per slice.
+            hidden_dim: Internal feedforward dimension.
+            num_layers: Number of transformer encoder layers.
+            nhead: Number of attention heads.
+            dropout: Dropout probability.
+            max_seq_len: Maximum number of slices expected (default 80).
+        """
         super().__init__()
 
         # Fixed sinusoidal positional embeddings

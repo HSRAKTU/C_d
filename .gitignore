@@ -56,7 +56,9 @@ experiments/**
 # ────────────────────────────────
 *.csv
 *.tsv
-/data/raw/*
+
+/data/raw/PointClouds/*.paddle_tensor
+/data/raw/subset_dir/*.txt
 /data/processed/*
 
 # ────────────────────────────────

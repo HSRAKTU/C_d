@@ -25,7 +25,7 @@ SCALER_FILE = PROC_DIR / "scalers" / "scaler.pkl"  # <— single file
 #  Cd table                                                          #
 # ------------------------------------------------------------------ #
 # Master CSV produced by the CFD post-processing workflow
-DRAG_CSV = RAW_DIR / "DrivAerNetPlusPlus_Drag_8k_cleaned.csv"
+DRAG_CSV = RAW_DIR / "cleaned_drag_coefficients.csv"
 
 # ------------------------------------------------------------------ #
 #  Pre-processing defaults                                           #

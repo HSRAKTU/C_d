@@ -3,7 +3,7 @@ name = "Cd_project"
 version = "0.1.0"
 description = "A light weight C_d predictor"
 readme = "README.md"
-requires-python = ">=3.11,<3.13"
+requires-python = ">=3.10,<3.12"
 dependencies = [
   # PyTorch - will use platform-appropriate builds
   "torch>=2.3.0",
