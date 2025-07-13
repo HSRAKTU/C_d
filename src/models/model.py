@@ -17,13 +17,24 @@ def get_model(
     Return an instantiated Cd model based on model_type.
 
     Supported:
+        - "plm" → PointNet + LSTM + MLP
         - "ptm" → PointNet + Transformer + MLP
         - "dtm" → DGCNN + Transformer + MLP (uses dynamic slice batching)
 
     Returns:
         nn.Module
     """
-    if model_type == "ptm":
+    if model_type == "plm":
+        return Cd_PTM_Model(
+            slice_input_dim=slice_input_dim,
+            slice_emb_dim=slice_emb_dim,
+            transformer_hidden_dim=transformer_hidden_dim,
+            transformer_layers=transformer_layers,
+            transformer_heads=transformer_heads,
+            transformer_dropout=transformer_dropout,
+            max_num_slices=max_num_slices,
+        )
+    elif model_type == "ptm":
         return Cd_PTM_Model(
             slice_input_dim=slice_input_dim,
             slice_emb_dim=slice_emb_dim,
