@@ -279,7 +279,7 @@ def prepare_dataset(
 
 def display_slices(
     slices,
-    car_id=None,
+    design_id=None,
     n_cols=5,
     limit=None,
     figsize=(15, 3),
@@ -323,7 +323,7 @@ def display_slices(
         axes.flat[j].axis("off")
 
     fig.suptitle(
-        f"Slices for {car_id}" if car_id else "Point Cloud Slices", fontsize=14
+        f"Slices for {design_id}" if design_id else "Point Cloud Slices", fontsize=14
     )
     plt.tight_layout()
 

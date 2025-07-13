@@ -116,7 +116,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
 
     # --------------------------------------------------------------------- #
-    # evaluate                                                              #
+    # Evaluate                                                              #
     # --------------------------------------------------------------------- #
     eval_p = subparsers.add_parser("evaluate", help="Evaluate a checkpoint")
     eval_p.add_argument(
@@ -126,9 +126,12 @@ def build_parser() -> argparse.ArgumentParser:
         "--checkpoint", type=Path, required=True, help="Path to model *.pt file"
     )
     eval_p.add_argument("--split", choices=["val", "test"], default="test")
+    eval_p.add_argument(
+        "--prepared-dataset-dir", type=Path, default=PREPARED_DATASET_DIR
+    )
 
     # --------------------------------------------------------------------- #
-    # predict                                                               #
+    # Predict                                                               #
     # --------------------------------------------------------------------- #
     pred_p = subparsers.add_parser("predict", help="Run inference")
     pred_p.add_argument(
@@ -143,7 +146,6 @@ def build_parser() -> argparse.ArgumentParser:
     pred_p.add_argument(
         "--output", type=Path, required=True, help="CSV path for predictions"
     )
-    pred_p.add_argument("--batch-size", type=int)
 
     return parser
 
@@ -176,7 +178,7 @@ def main() -> None:
         car_id = args.input.stem
         display_slices(
             slices,
-            car_id=car_id,
+            design_id=car_id,
             n_cols=args.cols,
             limit=args.limit,
             axis=args.axis,
@@ -220,6 +222,7 @@ def main() -> None:
             cfg_path=args.config,
             checkpoint_path=args.checkpoint,
             split=args.split,
+            preapred_dataset_dir=args.prepared_dataset_dir,
         )
 
     # ----------------------------- predict -------------------------------- #
