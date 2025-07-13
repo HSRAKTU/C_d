@@ -1,0 +1,39 @@
+{
+  "seed": 42,
+  "device": "cuda",
+
+  "data": {
+    "batch_size": 1,
+    "padded": false
+  },
+
+  "model": {
+    "model_type": "dlm",
+    "plm": {
+      "slice_input_dim": 2,
+      "slice_emb_dim": 256,
+      "lstm_hidden_dim": 256,
+      "design_emb_dim": 512
+    },
+    "dlm": {
+      "slice_input_dim": 2,
+      "slice_emb_dim": 256,
+      "lstm_hidden_dim": 256,
+      "k_neighbors": 16
+    }
+  },
+
+  "optim": {
+    "params": {
+      "lr": 0.0001
+    }
+  },
+
+  "debugging": true,
+  "training": {
+    "early_stop_patience": 10,
+    "early_stop_min_delta": 0.0,
+    "epochs": 101,
+    "log_interval": 100
+  }
+}
