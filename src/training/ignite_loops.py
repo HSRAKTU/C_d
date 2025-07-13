@@ -43,8 +43,7 @@ from src.config.constants import (
 from src.data.dataset import (
     CdDataset,
     ragged_collate_fn,
-)  # requires dataset.py implemented earlier
-
+)
 from src.models.model import get_model
 from src.utils.io import load_config
 from src.utils.logger import logger
@@ -327,7 +326,7 @@ def run_training(
     # (meant for inference, not resuming training)
     best_model_saver = ModelCheckpoint(
         dirname=EXP_DIR / exp_name / "model_checkpoints",
-        filename_prefix="best_model_",
+        filename_prefix="best_",
         n_saved=3,
         global_step_transform=global_step_from_engine(trainer),
         score_function=score_fn,
@@ -347,6 +346,7 @@ def run_training(
             EXP_DIR / exp_name / "training_state_checkpoints",
             create_dir=True,
             atomic=True,
+            require_empty=False,
         ),
         filename_prefix="training_state_",
         global_step_transform=global_step_from_engine(trainer),

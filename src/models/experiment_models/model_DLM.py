@@ -109,6 +109,6 @@ class Cd_DLM_Model(nn.Module):
         global_emb = self.temporal_encoder(slice_seq)  # (B, 2*hidden_dim)
 
         # Regression -------------------------------------------------------- #
-        cd_pred = self.head(global_emb).squeeze(-1)  # (B,)
+        cd_pred = self.head(global_emb)  # (B,)
 
         return cd_pred

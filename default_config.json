@@ -4,28 +4,28 @@
 
   "data": {
     "batch_size": 1,
-    "padded": true
+    "padded": false
   },
 
   "model": {
-    "model_type": "plm",
+    "model_type": "dlm",
     "plm": {
       "slice_input_dim": 2,
       "slice_emb_dim": 256,
       "lstm_hidden_dim": 256,
-      "design_emb_dim": 512,
+      "design_emb_dim": 512
     },
     "dlm": {
       "slice_input_dim": 2,
       "slice_emb_dim": 256,
       "lstm_hidden_dim": 256,
-      "k_neighbors": 16,
+      "k_neighbors": 16
     }
   },
 
   "optim": {
     "params": {
-      "lr": 0.001
+      "lr": 0.0001
     }
   },
 

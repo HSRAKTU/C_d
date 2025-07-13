@@ -219,6 +219,6 @@ class CdDataset(Dataset):
             )
         else:
             slices, cd = self._load_npz(self.file_paths[idx])
-            x = (slices,)
+            x = slices
         y = torch.tensor(cd, dtype=torch.float32)
         return x, y
