@@ -45,7 +45,7 @@ from src.data.dataset import (
     ragged_collate_fn,
 )
 from src.models.model import get_model
-from src.utils.helpers import make_unscale
+from src.utils.helpers import make_unscale, prepare_ragged_batch_fn
 from src.utils.io import load_config
 from src.utils.logger import logger
 
