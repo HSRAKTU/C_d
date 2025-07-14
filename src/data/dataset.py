@@ -142,7 +142,7 @@ class CdDataset(Dataset):
 
         logger.info(
             f"{split:<5} dataset with {len(self.file_paths)} samples | "
-            f"Cd Scaler mean={self.scaler.mean_[0]:.3f}"
+            f"Cd Scaler mean={self.scaler.mean_[0]:.3f} | "
             f"Cd Scaler scale={self.scaler.scale_[0]:.3f}"
         )
 
