@@ -204,7 +204,7 @@ class CdDataset(Dataset):
                 • if padded=True: a 2-tuple
                     (slices: FloatTensor of shape (num_slices, target_points, 2),
                     point_mask: FloatTensor of shape (num_slices, target_points))
-                • if padded=False: a 1-tuple whose single element is
+                • if padded=False:
                     slices_obj: a NumPy object-dtype array of length num_slices,
                                 where slices_obj[i] has shape (Ni, 2)
 
