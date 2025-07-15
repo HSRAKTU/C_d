@@ -112,3 +112,21 @@ class Cd_DLM_Model(nn.Module):
         cd_pred = self.head(global_emb)  # (B,)
 
         return cd_pred
+
+    @staticmethod
+    def example_input(batch_size: int = 2, S: int = 80, P: int = 6500) -> list[Batch]:
+        """
+        Returns dummy input: list of S PyG batches, each containing B slices of shape (P, 2)
+        """
+        from torch_geometric.data import Batch, Data
+
+        slice_batches = []
+
+        for s in range(S):
+            slice_data = []
+            for b in range(batch_size):
+                pts = torch.randn(P, 2)
+                slice_data.append(Data(x=pts))
+            slice_batches.append(Batch.from_data_list(slice_data))
+
+        return slice_batches
