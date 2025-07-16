@@ -29,6 +29,7 @@ from src.utils.io import load_scaler
 from src.utils.logger import logger
 
 
+# TODO: Fix predict.py file to align with the changes done since then.
 # --------------------------------------------------------------------------- #
 # Helpers                                                                     #
 # --------------------------------------------------------------------------- #
