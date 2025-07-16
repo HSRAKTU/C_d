@@ -17,7 +17,6 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
-from typing import TYPE_CHECKING
 
 import torch
 import torch.nn as nn
@@ -45,15 +44,9 @@ from src.data.dataset import (
     ragged_collate_fn,
 )
 from src.models.model import get_model
-from src.utils.helpers import make_unscale, prepare_ragged_batch_fn
+from src.utils.helpers import make_unscale, prepare_device, prepare_ragged_batch_fn
 from src.utils.io import load_config
 from src.utils.logger import logger
-
-
-def _prepare_device(device_str: str | None = None) -> torch.device:
-    if device_str:
-        return torch.device(device_str)
-    return torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 # --------------------------------------------------------------------------- #
@@ -87,7 +80,7 @@ def run_training(
     debugging = cfg.get("debugging", False)
     batch_size = cfg["data"].get("batch_size", 4)
     torch.manual_seed(seed)
-    device = _prepare_device(cfg.get("device"))
+    device = prepare_device(cfg.get("device"))
 
     # --------------------------------------------------------------------- #
     # Data                                                                  #
@@ -224,7 +217,16 @@ def run_training(
             f"bach_loss={engine.state.output:.4f}\n\n"  # scaled batch loss for this iteration
         )
 
-    # Evaluate & checkpoint every epoch
+    tb_logger = TensorboardLogger(log_dir=EXP_DIR / exp_name / "tb-logs")
+
+    # Log the scaled loss that we are using for criterion calculation during training.
+    tb_logger.attach_output_handler(
+        trainer,
+        event_name=Events.ITERATION_COMPLETED(every=log_interval),
+        tag="training",
+        output_transform=lambda loss: {"batch_loss": loss},
+    )
+
     @trainer.on(Events.EPOCH_COMPLETED)
     def _eval_and_log(engine):
         train_evaluator.run(train_loader)
@@ -239,23 +241,23 @@ def run_training(
             f"val R2={val_metrics['r2']:.4f}\n\n"
         )
 
-    # --------------------------------------------------------------------- #
-    # TensorBoard                                                           #
-    # --------------------------------------------------------------------- #
-    tb_logger = TensorboardLogger(log_dir=EXP_DIR / exp_name / "tb-logs")
-    tb_logger.attach_output_handler(
-        trainer,
-        event_name=Events.ITERATION_COMPLETED(every=log_interval),
-        tag="training",
-        output_transform=lambda loss: {"batch_loss": loss},
-    )
-    tb_logger.attach_output_handler(
-        val_evaluator,
-        event_name=Events.EPOCH_COMPLETED,
-        tag="validation",
-        metric_names=["mae", "mse", "r2"],
-        global_step_transform=global_step_from_engine(trainer),
-    )
+        step = engine.state.epoch
+
+        tb_logger.writer.add_scalars(
+            "MAE",
+            {"train": train_metrics["mae"], "validation": val_metrics["mae"]},
+            step,
+        )
+
+        tb_logger.writer.add_scalars(
+            "MSE",
+            {"train": train_metrics["mse"], "validation": val_metrics["mse"]},
+            step,
+        )
+
+        tb_logger.writer.add_scalars(
+            "R2", {"train": train_metrics["r2"], "validation": val_metrics["r2"]}, step
+        )
 
     def score_fn(eng):
         """

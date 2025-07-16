@@ -12,7 +12,7 @@ python -m src.main evaluate \
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Dict, Union
+from typing import Dict
 
 import torch
 from ignite.engine import create_supervised_evaluator
@@ -24,15 +24,9 @@ from torch.utils.data import DataLoader
 from src.config.constants import PREPARED_DATASET_DIR
 from src.data.dataset import CdDataset, ragged_collate_fn
 from src.models.model import get_model
-from src.utils.helpers import make_unscale, prepare_ragged_batch_fn
+from src.utils.helpers import make_unscale, prepare_device, prepare_ragged_batch_fn
 from src.utils.io import load_config
 from src.utils.logger import logger
-
-
-def _prepare_device(device_str: str | None = None) -> torch.device:
-    if device_str:
-        return torch.device(device_str)
-    return torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 # --------------------------------------------------------------------------- #
@@ -57,7 +51,7 @@ def run_evaluation(
         Dict with metric names → values.
     """
     cfg = load_config(cfg_path)
-    device = _prepare_device(cfg.get("device"))
+    device = prepare_device(cfg.get("device"))
     debugging = cfg.get("debugging", False)
     padded: bool = cfg["data"]["padded"]
     batch_size = cfg["data"].get("batch_size", 4)

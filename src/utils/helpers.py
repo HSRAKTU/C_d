@@ -2,6 +2,12 @@ import torch
 from sklearn.preprocessing import StandardScaler
 
 
+def prepare_device(device_str: str | None = None) -> torch.device:
+    if device_str:
+        return torch.device(device_str)
+    return torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+
 def prepare_ragged_batch_fn(batch, device, non_blocking):
     slice_batches, cd_values = batch
     # move each PyG Batch

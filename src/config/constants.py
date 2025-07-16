@@ -17,6 +17,7 @@ SUBSET_DIR = RAW_DIR / "subset_dir"
 
 SLICE_DIR = PROC_DIR / "slices"
 PREPARED_DATASET_DIR = PROC_DIR / "prepared_dataset"
+PREPARED_DATASET_PADDED_DIR = PROC_DIR / "prepared_dataset" / "padded"
 SCALER_FILE = PROC_DIR / "scalers" / "scaler.pkl"  # <— single file
 # TODO: [LATER] support exp-name based scaler files when we have different datasets
 

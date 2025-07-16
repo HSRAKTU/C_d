@@ -22,13 +22,16 @@ from src.config.constants import (
     DEFAULT_TARGET_POINTS,
     POINT_CLOUDS_DIR,
     PREPARED_DATASET_DIR,
+    PREPARED_DATASET_PADDED_DIR,
     SLICE_DIR,
     SUBSET_DIR,
 )
+from src.data.dataset import CdDataset
 from src.data.slices import PointCloudSlicer, display_slices, prepare_dataset
 from src.evaluation.evaluate import run_evaluation
 from src.inference.predict import run_inference
 from src.training.ignite_loops import run_training
+from src.utils.io import load_config
 from src.utils.logger import logger
 
 
@@ -67,7 +70,7 @@ def build_parser() -> argparse.ArgumentParser:
     viz_p.add_argument("--save-path")
 
     # --------------------------------------------------------------------- #
-    # pad                                                                   #
+    # prep                                                                  #
     # --------------------------------------------------------------------- #
     prep_p = subparsers.add_parser("prep", help="Prepare Dataset")
     prep_p.add_argument(
@@ -82,6 +85,24 @@ def build_parser() -> argparse.ArgumentParser:
     )
     prep_p.add_argument("--target-points", type=int, default=DEFAULT_TARGET_POINTS)
     prep_p.add_argument("--subset-dir", type=Path, default=SUBSET_DIR)
+
+    # --------------------------------------------------------------------- #
+    # fit scaler                                                            #
+    # --------------------------------------------------------------------- #
+    fit_scaler_p = subparsers.add_parser("fit_scaler", help="Fit Scaler")
+    fit_scaler_p.add_argument("--prepared-dataset-dir", type=Path)
+    fit_scaler_p.add_argument(
+        "--config",
+        type=Path,
+        required=True,
+        help="Path to YAML / JSON experiment config",
+    )
+    fit_scaler_p.add_argument(
+        "--padded",
+        action="store_true",
+        help="Only used when --prepared-dataset-dir is not provided."
+        "If set, use the default padded dataset directory, otherwise, use the default non-padded dataset",
+    )
 
     # --------------------------------------------------------------------- #
     # train                                                                 #
@@ -105,9 +126,7 @@ def build_parser() -> argparse.ArgumentParser:
         required=True,
         help="Name for this experiment run (e.g. lr1e-3_bs32).",
     )
-    train_p.add_argument(
-        "--prepared-dataset-dir", type=Path, default=PREPARED_DATASET_DIR
-    )
+    train_p.add_argument("--prepared-dataset-dir", type=Path)
     train_p.add_argument(
         "--fit-scaler",
         action="store_true",
@@ -200,6 +219,24 @@ def main() -> None:
             subset_dir=args.subset_dir,
         )
 
+    elif args.command == "fit_scaler":
+        dataset_path: Path | None = args.prepared_dataset_dir
+        cfg = load_config(args.config)
+        padded: bool = cfg["data"]["padded"]
+        debugging: bool = cfg["debugging"]
+        if dataset_path is None:
+            if padded:
+                dataset_path = PREPARED_DATASET_PADDED_DIR
+            else:
+                dataset_path = PREPARED_DATASET_DIR
+        _ = CdDataset(
+            root_dir=dataset_path,
+            split="train",
+            padded=padded,
+            debugging=debugging,
+            fit_scaler=True,
+        )
+
     # ------------------------------ train --------------------------------- #
     elif args.command == "train":
         resume: Path | None = args.resume
@@ -207,22 +244,38 @@ def main() -> None:
             if not Path(resume).is_file():
                 logger.error(f"Checkpoint not found: {resume}")
                 sys.exit(1)
+        dataset_path: Path | None = args.prepared_dataset_dir
+        if dataset_path is None:
+            cfg = load_config(args.config)
+            padded: bool = cfg["data"]["padded"]
+            if padded:
+                dataset_path = PREPARED_DATASET_PADDED_DIR
+            else:
+                dataset_path = PREPARED_DATASET_DIR
 
         run_training(
             exp_name=args.exp_name,
             cfg_path=args.config,
             resume=resume,
-            preapred_dataset_dir=args.prepared_dataset_dir,
+            preapred_dataset_dir=dataset_path,
             fit_scaler=args.fit_scaler,
         )
 
     # ---------------------------- evaluate -------------------------------- #
     elif args.command == "evaluate":
+        dataset_path: Path | None = args.prepared_dataset_dir
+        if dataset_path is None:
+            cfg = load_config(args.config)
+            padded: bool = cfg["data"]["padded"]
+            if padded:
+                dataset_path = PREPARED_DATASET_PADDED_DIR
+            else:
+                dataset_path = PREPARED_DATASET_DIR
         run_evaluation(
             cfg_path=args.config,
             checkpoint_path=args.checkpoint,
             split=args.split,
-            preapred_dataset_dir=args.prepared_dataset_dir,
+            preapred_dataset_dir=dataset_path,
         )
 
     # ----------------------------- predict -------------------------------- #
