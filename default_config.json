@@ -3,12 +3,11 @@
   "device": "cuda",
 
   "data": {
-    "batch_size": 1,
-    "padded": false
+    "batch_size": 2
   },
 
   "model": {
-    "model_type": "dlm",
+    "model_type": "plm",
     "plm": {
       "slice_input_dim": 2,
       "slice_emb_dim": 256,
@@ -25,7 +24,7 @@
 
   "optim": {
     "params": {
-      "lr": 0.0001
+      "lr": 0.001
     }
   },
 

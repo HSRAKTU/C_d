@@ -21,7 +21,7 @@ from ignite.metrics import MeanAbsoluteError, MeanSquaredError
 from ignite.metrics.regression.r2_score import R2Score
 from torch.utils.data import DataLoader
 
-from src.config.constants import PREPARED_DATASET_DIR
+from src.config.constants import PREPARED_DATASET_DIR, model_to_padded
 from src.data.dataset import CdDataset, ragged_collate_fn
 from src.models.model import get_model
 from src.utils.helpers import make_unscale, prepare_device, prepare_ragged_batch_fn
@@ -53,7 +53,7 @@ def run_evaluation(
     cfg = load_config(cfg_path)
     device = prepare_device(cfg.get("device"))
     debugging = cfg.get("debugging", False)
-    padded: bool = cfg["data"]["padded"]
+    padded: bool = model_to_padded[cfg["model"]["model_type"]]
     batch_size = cfg["data"].get("batch_size", 4)
 
     # --------------------------------------------------------------------- #

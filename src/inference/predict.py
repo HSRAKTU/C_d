@@ -1,186 +1,131 @@
 """
-Batch inference for Cd prediction.
+Single-file inference for Cd prediction.
 
-Usage
------
+Example
+-------
 python -m src.main predict \
     --config experiments/baseline.yaml \
-    --checkpoint experiments/checkpoints/best_model_val_mae=0.0123.pt \
-    --input-data data/samples_to_score              # file OR directory of *.npz
-    --output predictions.csv
+    --checkpoint experiments/exp_name/checkpoints/best_model.pt \
+    --point-cloud data/car_0001.paddle_tensor
 """
 
 from __future__ import annotations
 
-import csv
-import json
 from pathlib import Path
-from typing import Dict, List, Sequence, Union
+from typing import List, Union
 
 import numpy as np
 import torch
-import yaml
-from ignite.engine import Engine, Events
-from torch.utils.data import DataLoader, Dataset
+from torch_geometric.data import Batch, Data
 
-from src.config.constants import SCALER_FILE
-from src.models.experiment_models.model_PTM import CdRegressor
-from src.utils.io import load_scaler
+# ── project imports ──────────────────────────────────────────────────── #
+from src.config.constants import (  # constants & mapping
+    DEFAULT_NUM_SLICES,
+    DEFAULT_SLICE_AXIS,
+    DEFAULT_TARGET_POINTS,
+    SCALER_FILE,
+    SUBSET_DIR,
+    model_to_padded,
+)
+from src.data.slices import (
+    PointCloudSlicer,
+    pad_and_mask_slices,  #
+)
+from src.models.model import get_model
+from src.utils.helpers import prepare_device
+from src.utils.io import load_config, load_scaler
 from src.utils.logger import logger
-
-
-# TODO: Fix predict.py file to align with the changes done since then.
-# --------------------------------------------------------------------------- #
-# Helpers                                                                     #
-# --------------------------------------------------------------------------- #
-def _load_config(cfg_path: Union[str, Path]) -> Dict:
-    """Load YAML / JSON experiment config."""
-    cfg_path = Path(cfg_path)
-    if not cfg_path.exists():
-        raise FileNotFoundError(cfg_path)
-    if cfg_path.suffix in {".yml", ".yaml"}:
-        return yaml.safe_load(cfg_path.read_text())
-    if cfg_path.suffix == ".json":
-        return json.loads(cfg_path.read_text())
-    raise ValueError(f"Unsupported config: {cfg_path}")
-
-
-def _prepare_device(device_str: str | None = None) -> torch.device:
-    if device_str:
-        return torch.device(device_str)
-    return torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-
-# --------------------------------------------------------------------------- #
-# Dataset                                                                     #
-# --------------------------------------------------------------------------- #
-
-
-class InferenceDataset(Dataset):
-    """
-    Loads *.npz files containing:
-        slices     -> (S, P, 2)
-        point_mask -> (S, P)
-        slice_mask -> (S,)
-    """
-
-    def __init__(self, files: Sequence[Path]):
-        self.files = list(files)
-        self.scaler = load_scaler(SCALER_FILE)
-
-    def __len__(self) -> int:
-        return len(self.files)
-
-    def __getitem__(
-        self, idx: int
-    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, str]:
-        fp = self.files[idx]
-        arr = dict(
-            **(
-                torch.load(fp)
-                if fp.suffix == ".pt"
-                else dict(np.load(fp, allow_pickle=True))
-            )
-        )
-        slices = torch.as_tensor(arr["slices"]).float()
-        p_mask = torch.as_tensor(arr["point_mask"]).float()
-        s_mask = torch.as_tensor(arr["slice_mask"]).float()
-        design_id = fp.stem
-        return slices, p_mask, s_mask, design_id
-
-
-def _collate(batch):
-    """Keeps design_ids in a list to avoid default tensor stacking."""
-    slices, p_masks, s_masks, ids = zip(*batch)
-    return (
-        torch.stack(slices, dim=0),
-        torch.stack(p_masks, dim=0),
-        torch.stack(s_masks, dim=0),
-        list(ids),
-    )
 
 
 # --------------------------------------------------------------------------- #
 # Public API                                                                  #
 # --------------------------------------------------------------------------- #
-def run_inference(
-    cfg_path: str | Path,
-    checkpoint_path: str | Path,
-    input_data: str | Path,
-    output_path: str | Path,
-    batch_size: int | None = None,
-) -> List[tuple[str, float]]:
+@torch.inference_mode()
+def predict_cd(
+    *,
+    cfg_path: Union[str, Path],
+    checkpoint_path: Union[str, Path],
+    point_cloud_path: Union[str, Path],
+) -> float:
     """
-    Generate Cd predictions for a set of *.npz slice files.
+    Run inference on a **single** point-cloud file and return the un-scaled Cd.
 
-    Returns list of (design_id, Cd) tuples and writes a CSV.
+    Parameters
+    ----------
+    cfg_path
+        Path to the YAML / JSON experiment config (used to recreate the model).
+    checkpoint_path
+        Path to the trained *.pt file.
+    point_cloud_path
+        Path to the *.paddle_tensor point-cloud to score.
+    device
+        Optional override for the compute device (e.g. "cuda:0").
+
+    Returns
+    -------
+    float
+        Predicted drag-coefficient **in the original scale**.
     """
-    cfg = _load_config(cfg_path)
-    device = _prepare_device(cfg.get("device"))
+    cfg = load_config(cfg_path)
+    device = prepare_device(cfg.get("device"))
+    model_type: str = cfg["model"]["model_type"]
+    model_params = cfg["model"][model_type]
 
-    # --------------------------- files to score -------------------------- #
-    input_path = Path(input_data)
-    if input_path.is_dir():
-        files = sorted(input_path.glob("*.npz"))
-    elif input_path.is_file():
-        files = [input_path]
-    else:
-        raise FileNotFoundError(input_path)
-    if not files:
-        raise RuntimeError(f"No .npz files found in {input_path}")
-
-    ds = InferenceDataset(files)
-    dl = DataLoader(
-        ds,
-        batch_size=batch_size or cfg["data"].get("batch_size", 8),
-        pin_memory=(device.type == "cuda"),
-        shuffle=False,
-        collate_fn=_collate,
-    )
-
-    # ----------------------------- model ---------------------------------- #
-    model = CdRegressor(**cfg["model"]).to(device)
+    # ------------------------------------------------------------------ #
+    # Model & checkpoint                                                 #
+    # ------------------------------------------------------------------ #
+    model = get_model(model_type=model_type, **model_params).to(device)
     ckpt = torch.load(checkpoint_path, map_location=device)
     state = ckpt["model"] if isinstance(ckpt, dict) and "model" in ckpt else ckpt
-    model.load_state_dict(state)
+    model.load_state_dict(state, strict=True)
     model.eval()
-    logger.info(f"Loaded checkpoint {checkpoint_path}")
+    logger.info(f"Loaded checkpoint → {checkpoint_path}")
 
-    # --------------------- Ignite inference engine ------------------------ #
-    predictions_scaled: List[tuple[str, float]] = []
+    # ------------------------------------------------------------------ #
+    # Point-cloud → 2-D slices                                           #
+    # ------------------------------------------------------------------ #
+    num_slices = cfg["data"].get("num_slices", DEFAULT_NUM_SLICES)
+    axis = cfg["data"].get("slice_axis", DEFAULT_SLICE_AXIS)
 
-    def _step(engine, batch):
-        slices, p_mask, s_mask, ids = batch
-        slices, p_mask, s_mask = slices.to(device), p_mask.to(device), s_mask.to(device)
-        with torch.no_grad():
-            preds = model((slices, p_mask, s_mask)).squeeze()
-        preds = preds.cpu().tolist()
-        if isinstance(preds, float):  # batch_size == 1
-            preds = [preds]
-        return list(zip(ids, preds))
+    slicer = PointCloudSlicer(
+        input_dir=Path("."),  # dummy
+        output_dir=Path("."),  # dummy
+        num_slices=num_slices,
+        axis=axis,
+        max_files=None,
+        split="all",
+        subset_dir=SUBSET_DIR,
+    )
 
-    infer_engine = Engine(_step)
+    slices = slicer.process_file(Path(point_cloud_path))
 
-    @infer_engine.on(Events.ITERATION_COMPLETED)
-    def _gather(engine):
-        predictions_scaled.extend(engine.state.output)
+    # ------------------------------------------------------------------ #
+    # Build model input                                                  #
+    # ------------------------------------------------------------------ #
+    padded: bool = model_to_padded[model_type]
+    if padded:
+        target_pts = cfg["data"].get("target_points", DEFAULT_TARGET_POINTS)
+        slices_padded, point_mask = pad_and_mask_slices(slices, target_pts)
+        slices_t = torch.from_numpy(slices_padded).unsqueeze(0).float().to(device)
+        p_mask_t = torch.from_numpy(point_mask).unsqueeze(0).float().to(device)
+        model_input = (slices_t, p_mask_t)
+    else:
+        batches: List[Batch] = []
+        for sl in slices:
+            data = Data(x=torch.from_numpy(sl.astype(np.float32)))
+            batches.append(Batch.from_data_list([data]).to(device))
+        model_input = batches
 
-    infer_engine.run(dl)
+    # ------------------------------------------------------------------ #
+    # Forward pass                                                       #
+    # ------------------------------------------------------------------ #
+    pred_scaled: float = float(model(model_input).squeeze().cpu())
+    logger.info(f"Predicted (scaled) Cd = {pred_scaled:.5f}")
 
-    # ── inverse-transform to original Cd units ───────────────────────────── #
-    scaler = ds.scaler
-    predictions = [
-        (id_, float(scaler.inverse_transform(np.array([[cd]]))[0, 0]))
-        for id_, cd in predictions_scaled
-    ]
-
-    # ---------------------------- save CSV -------------------------------- #
-    output_path = Path(output_path)
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    with output_path.open("w", newline="") as f:
-        writer = csv.writer(f)
-        writer.writerow(["design_id", "Cd"])
-        writer.writerows(predictions)
-    logger.info(f"Saved {len(predictions)} predictions → {output_path}")
-
-    return predictions
+    # ------------------------------------------------------------------ #
+    # Inverse-transform to original units                                #
+    # ------------------------------------------------------------------ #
+    scaler = load_scaler(SCALER_FILE)  # uses the global scaler path
+    cd_unscaled = float(scaler.inverse_transform(np.array([[pred_scaled]]))[0, 0])
+    logger.info(f"Predicted (un-scaled) Cd = {cd_unscaled:.5f}")
+    return cd_unscaled

@@ -25,6 +25,7 @@ from src.config.constants import (
     PREPARED_DATASET_PADDED_DIR,
     SLICE_DIR,
     SUBSET_DIR,
+    model_to_padded,
 )
 from src.data.dataset import CdDataset
 from src.data.slices import PointCloudSlicer, display_slices, prepare_dataset
@@ -152,7 +153,10 @@ def build_parser() -> argparse.ArgumentParser:
     # --------------------------------------------------------------------- #
     # Predict                                                               #
     # --------------------------------------------------------------------- #
-    pred_p = subparsers.add_parser("predict", help="Run inference")
+    # --------------------------------------------------------------------- #
+    # Predict                                                               #
+    # --------------------------------------------------------------------- #
+    pred_p = subparsers.add_parser("predict", help="Run single-file inference")
     pred_p.add_argument(
         "--config", type=Path, required=True, help="Experiment config YAML / JSON"
     )
@@ -160,10 +164,10 @@ def build_parser() -> argparse.ArgumentParser:
         "--checkpoint", type=Path, required=True, help="Model *.pt checkpoint"
     )
     pred_p.add_argument(
-        "--input-data", type=Path, required=True, help="File or directory of *.npz"
-    )
-    pred_p.add_argument(
-        "--output", type=Path, required=True, help="CSV path for predictions"
+        "--point-cloud",
+        type=Path,
+        required=True,
+        help="Path to the *.paddle_tensor point-cloud file",
     )
 
     return parser
@@ -247,7 +251,7 @@ def main() -> None:
         dataset_path: Path | None = args.prepared_dataset_dir
         if dataset_path is None:
             cfg = load_config(args.config)
-            padded: bool = cfg["data"]["padded"]
+            padded: bool = model_to_padded[cfg["model"]["model_type"]]
             if padded:
                 dataset_path = PREPARED_DATASET_PADDED_DIR
             else:
@@ -266,7 +270,7 @@ def main() -> None:
         dataset_path: Path | None = args.prepared_dataset_dir
         if dataset_path is None:
             cfg = load_config(args.config)
-            padded: bool = cfg["data"]["padded"]
+            padded: bool = model_to_padded[cfg["model"]["model_type"]]
             if padded:
                 dataset_path = PREPARED_DATASET_PADDED_DIR
             else:

@@ -35,10 +35,7 @@ from ignite.metrics.regression.r2_score import R2Score
 from torch.utils.data import DataLoader
 from tqdm.contrib.logging import logging_redirect_tqdm
 
-from src.config.constants import (
-    EXP_DIR,
-    PREPARED_DATASET_DIR,
-)
+from src.config.constants import EXP_DIR, PREPARED_DATASET_DIR, model_to_padded
 from src.data.dataset import (
     CdDataset,
     ragged_collate_fn,
@@ -85,7 +82,7 @@ def run_training(
     # --------------------------------------------------------------------- #
     # Data                                                                  #
     # --------------------------------------------------------------------- #
-    padded: bool = cfg["data"]["padded"]
+    padded: bool = model_to_padded[cfg["model"]["model_type"]]
     train_set = CdDataset(
         root_dir=preapred_dataset_dir,
         split="train",

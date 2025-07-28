@@ -34,3 +34,9 @@ DRAG_CSV = RAW_DIR / "cleaned_drag_coefficients.csv"
 DEFAULT_NUM_SLICES = 80
 DEFAULT_SLICE_AXIS = "x"
 DEFAULT_TARGET_POINTS = 6_500
+
+
+# ------------------------------------------------------------------ #
+#  Model to Padding mapping                                          #
+# ------------------------------------------------------------------ #
+model_to_padded: dict[str, bool] = {"plm": True, "dlm": False}
