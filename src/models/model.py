@@ -1,5 +1,4 @@
 from src.config.constants import DEFAULT_NUM_SLICES
-from src.models.experiment_models.model_DLM import Cd_DLM_Model
 from src.models.experiment_models.model_PLM import Cd_PLM_Model
 
 
@@ -31,13 +30,8 @@ def get_model(
             design_emb_dim=design_emb_dim,
         )
     elif model_type == "dlm":
-        return Cd_DLM_Model(
-            slice_input_dim=slice_input_dim,
-            slice_emb_dim=slice_emb_dim,
-            k_neighbors=k_neighbors,
-            num_slices=num_slices,
-            lstm_hidden_dim=lstm_hidden_dim,
-        )
+        raise NotImplementedError("DLM is not implemented yet.")
+
     elif model_type == "ptm":
         raise NotImplementedError("PTM is not implemented yet.")
 
@@ -45,4 +39,4 @@ def get_model(
         raise NotImplementedError("DTM is not implement yet.")
 
     else:
-        raise ValueError(f"Unsupported model_type '{model_type}'. use 'plm' or 'dlm'.")
+        raise ValueError(f"Unsupported model_type '{model_type}'. use 'plm'.")
