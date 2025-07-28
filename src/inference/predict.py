@@ -119,7 +119,15 @@ def predict(
     # ------------------------------------------------------------------ #
     # Forward pass                                                       #
     # ------------------------------------------------------------------ #
+    import time
+
+    # ----------------- Measure inference time -----------------
+    start = time.perf_counter()
     pred_scaled: float = float(model(model_input).squeeze().cpu())
+    end = time.perf_counter()
+
+    inference_time = end - start
+    logger.info(f"Inference time: {inference_time:.6f} seconds")
     logger.info(f"Predicted (scaled) Cd = {pred_scaled:.5f}")
 
     # ------------------------------------------------------------------ #

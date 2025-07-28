@@ -1,6 +1,6 @@
 {
   "seed": 42,
-  "device": "cuda",
+  "device": "cpu",
 
   "data": {
     "batch_size": 2
