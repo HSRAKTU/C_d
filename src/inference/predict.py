@@ -41,7 +41,7 @@ from src.utils.logger import logger
 # Public API                                                                  #
 # --------------------------------------------------------------------------- #
 @torch.inference_mode()
-def predict_cd(
+def predict(
     *,
     cfg_path: Union[str, Path],
     checkpoint_path: Union[str, Path],
@@ -93,7 +93,7 @@ def predict_cd(
         num_slices=num_slices,
         axis=axis,
         max_files=None,
-        split="all",
+        split="predict",
         subset_dir=SUBSET_DIR,
     )
 

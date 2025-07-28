@@ -28,7 +28,7 @@ class PointCloudSlicer:
         num_slices: int,
         axis: str,
         max_files: Optional[int],
-        split: Literal["train", "val", "test", "all"],
+        split: Literal["train", "val", "test", "all", "predict"],
         subset_dir: Path,
     ) -> None:
         """
@@ -61,7 +61,7 @@ class PointCloudSlicer:
                 | load_design_ids("val", self.subset_dir)
                 | load_design_ids("test", self.subset_dir)
             )
-        else:
+        elif self.split != "predict":
             self.valid_ids = load_design_ids(self.split, self.subset_dir)
 
     def generate_slices(self, points: np.ndarray) -> list[np.ndarray]:

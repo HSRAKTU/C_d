@@ -30,7 +30,7 @@ from src.config.constants import (
 from src.data.dataset import CdDataset
 from src.data.slices import PointCloudSlicer, display_slices, prepare_dataset
 from src.evaluation.evaluate import run_evaluation
-from src.inference.predict import run_inference
+from src.inference.predict import predict
 from src.training.ignite_loops import run_training
 from src.utils.io import load_config
 from src.utils.logger import logger
@@ -284,13 +284,12 @@ def main() -> None:
 
     # ----------------------------- predict -------------------------------- #
     elif args.command == "predict":
-        run_inference(
+        cd_val = predict(
             cfg_path=args.config,
             checkpoint_path=args.checkpoint,
-            input_data=args.input_data,
-            output_path=args.output,
-            batch_size=args.batch_size,
+            point_cloud_path=args.point_cloud,
         )
+        print(f"Predicted Cd  →  {cd_val:.5f}")
 
 
 if __name__ == "__main__":
